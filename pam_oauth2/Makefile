@@ -1,7 +1,7 @@
 CC=gcc
 
-CFLAGS=-Wall -fPIC -ansi -pedantic
-DEST=/lib/security
+CFLAGS=-Wall -fPIC -ansi -pedantic -g -O1
+DEST=/lib64/security
 
 all: pam_oauth2.so
 
@@ -13,6 +13,7 @@ pam_oauth2.so: pam_oauth2.o jsmn/libjsmn.a
 
 install: pam_oauth2.so
 	if ! test -d $(DEST); then mkdir $(DEST); fi
+	chmod 755 pam_oauth2.so
 	cp -a pam_oauth2.so $(DEST)
 
 clean:

@@ -16,7 +16,7 @@ $ sudo make install
 ## Configuration
 
 ```
-auth sufficient pam_oauth2.so <tokeninfo url> <login field> key1=value2 key2=value2
+auth sufficient pam_oauth2.so <introspect url> <clientid>:<client secret> <username field> key1=value2 key2=value
 account sufficient pam_oauth2.so
 ```
 
@@ -25,12 +25,12 @@ account sufficient pam_oauth2.so
 Lets assume that configuration is looking like:
 
 ```
-auth sufficient pam_oauth2.so https://foo.org/oauth2/tokeninfo?access_token= uid grp=tester
+auth sufficient pam_oauth2.so https://auth.globus.org/v2/oauth2/token/introspect username scope=urn:globus:auth:scope:trooper.mikelink.com:ssh_login 
 ```
 
 And somebody is trying to login with login=foo and token=bar.
 
-pam\_oauth2 module will make http request https://foo.org/oauth2/tokeninfo?access_token=bar (tokeninfo url is simply concatenated with token) and check response code and content.
+pam\_oauth2 module will make http post request for introspection to url with token=bar as post data, and check response code and content.
 
 If the response code is not 200 - authentication will fail. After that it will check response content:
 
@@ -38,19 +38,15 @@ If the response code is not 200 - authentication will fail. After that it will c
 {
   "access_token": "bar",
   "expires_in": 3598,
-  "grp": "tester",
-  "scope": [
-    "uid"
-  ],
-  "token_type": "Bearer",
-  "uid": "foo"
+  "scope": "urn:globus:auth:scope:trooper.mikelink.com:ssh_login",
+  "username": "foo"
 }
 ```
 
 It will check that response is a valid JSON object and top-level object contains following key-value pairs:
 ```json
-  "uid": "foo",
-  "grp": "tester"
+  "scope": "urn:globus:auth:scope:trooper.mikelink.com:ssh_login",
+  "username": "foo"
 ```
 
 If some keys haven't been found or values don't match with expectation - authentication will fail.
