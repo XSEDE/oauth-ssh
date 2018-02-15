@@ -12,7 +12,6 @@ libglobus_auth_la_SOURCES = auth_error.c      \
                             auth_introspect.c \
                             curl_error.c      \
                             curl_wrapper.c    \
-                            encode.c          \
                             endpoints.c       \
                             endpoint_errors.c \
                             globus_auth.c     \

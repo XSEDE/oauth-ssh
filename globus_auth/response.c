@@ -2,7 +2,6 @@
 #include <string.h>
 #include "response.h"
 #include "strings.h"
-#include "encode.h"
 
 #include "tests/unit_test.h"
 
