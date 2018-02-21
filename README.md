@@ -67,8 +67,16 @@ Logout successful
 You can log in as jasonalt1, jasonalt2
 
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
-
 ```
+
+Note: on your first connection attempt you may get the following SSH message. Enter 'yes' to continue.
+```
+The authenticity of host 'ssh.demo.globus.org (35.163.193.209)' can't be established.
+ECDSA key fingerprint is SHA256:VgGgMeafzaLBufMPR8UQ1OJIrey92tU87YaG7YKeI8k.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'ssh.demo.globus.org,35.163.193.209' (ECDSA) to the list of known hosts.
+```
+
 5. You can omit the 'connect' subcommand to globus-ssh:
 ```
 (venv) [centos] globus-ssh ssh.demo.globus.org
