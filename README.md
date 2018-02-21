@@ -20,7 +20,6 @@ sudo pip install virtualenv
 sudo yum install git  
 sudo yum install gcc  
 sudo yum install python-devel  
-sudo pip install virtualenv  
 git clone git@github.com:globusonline/globus-ssh.git  
 cd globus-ssh  
 git checkout develop/prototype  
@@ -63,7 +62,7 @@ Logout successful
 
 4. Connect with the special account 'globus-mapping' to view your available accounts:
 ```
-(venv) [centos@ip-172-31-33-122 SSH]$ globus-ssh -l globus-mapping ssh.sandbox.globuscs.info
+(venv) [centos@ip-172-31-33-122 SSH]$ globus-ssh -l globus-mapping ssh.demo.globus.org
 
 You can log in as jasonalt1, jasonalt2
 
