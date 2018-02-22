@@ -20,12 +20,14 @@ _options_w_values=['-'+x for x in list("bcDEeFIiJLlmOopQRSWw")]
 _options=['-'+x for x in list("1246AaCfGgKkMNnqsTtVvXxYy-")]
 
 def find_host_name(arg_list):
+    """Parse args intended for SSH to find the hostname."""
+
     arg_iter = iter([arg for arg in arg_list if arg not in _options])
     for arg in arg_iter:
         if arg in _options_w_values:
             next(arg_iter)
             continue
-        return arg
+        return arg.split('@')[-1]
     return None
 
 class InjectToken():
@@ -70,4 +72,6 @@ class InjectToken():
 
         
 def run(access_token, ssh_args):
+    """Spawn SSH with ssh_args and inject the access token."""
+
     return process.spawn(["ssh"] + list(ssh_args), InjectToken(access_token))
