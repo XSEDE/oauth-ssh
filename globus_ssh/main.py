@@ -100,40 +100,41 @@ def globus_scp(scp_args):
 
 @click.group(cls=DefaultToConnect, context_settings=dict(ignore_unknown_options=True))
 def globus_ssh():
-    """globus-ssh entry point."""
+    """Access token management and SSH wrapper command"""
+
     pass
 
 
 @globus_ssh.command()
-@click.argument('fqdn')
-def login(fqdn):
-    """Get an access token for <fqdn>"""
+@click.argument('hostname')
+def login(hostname):
+    """Get an access token for <hostname>"""
 
-    (errmsg, token) = try_get_access_token(fqdn)
+    (errmsg, token) = try_get_access_token(hostname)
     if errmsg:
         click.echo ("An error occurred: " + errmsg)
         click.get_current_context().exit(1)
 
     if token is None:
-        (errmsg, token) = auth.do_auth_code_grant(fqdn)
+        (errmsg, token) = auth.do_auth_code_grant(hostname)
         if errmsg:
             click.echo ("An error occurred: " + errmsg)
             click.get_current_context().exit(1)
 
-    save_token(fqdn, token)
+    save_token(hostname, token)
     click.echo ("Login successful")
     click.get_current_context().exit(0)
 
 
 @globus_ssh.command()
-@click.argument('fqdn')
-def logout(fqdn):
-    """Revoke all tokens for <fqdn>"""
+@click.argument('hostname')
+def logout(hostname):
+    """Revoke all tokens for <hostname>"""
 
-    token = load_token(fqdn)
+    token = load_token(hostname)
     if token:
         auth.revoke_token(token)
-        delete_token(fqdn)
+        delete_token(hostname)
 
     click.echo('Logout successful')
 
@@ -142,7 +143,7 @@ def logout(fqdn):
 @click.argument('ssh_args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_context
 def connect(ctx, ssh_args):
-    """Connect to the SSH service @ <fqdn>"""
+    """Connect to the SSH service @ <hostname>"""
 
     if ctx.obj is not None:
         ssh_args = (ctx.obj,) + ssh_args
