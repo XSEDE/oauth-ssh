@@ -37,5 +37,13 @@ class Config():
         return Token(**dict(self._config.items(fqdn)))
 
     def _flush(self):
-        with open(self._file, 'wb') as configfile:
-            self._config.write(configfile)
+        mask = os.umask(0o177)
+
+        try:
+            with open(self._file, 'wb') as configfile:
+                self._config.write(configfile)
+            os.chmod(self._file, 0o600)
+
+        except Exception as e:
+            os.umask(mask)
+            raise e
