@@ -16,18 +16,18 @@ autoreconf -i
 PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 
 
-# sufficient causes the prompt to display after the mappings are displayed
-# requisite won't allow us to pass through to another authentication scheme
+\# sufficient causes the prompt to display after the mappings are displayed
+\# requisite won't allow us to pass through to another authentication scheme
 
-# maxtries is returned when account mappings are displayed, so die
-# success is returned when everything is good to go
-# user_unknown is returned when they choose a bad account, so die
-# otherwise, we should fall through to allow others authentication mechs
+\# maxtries is returned when account mappings are displayed, so die
+\# success is returned when everything is good to go
+\# user_unknown is returned when they choose a bad account, so die
+\# otherwise, we should fall through to allow others authentication mechs
 [maxtries=die success=sufficient default=ignore]
 
-# Regardless on what we try to do on account unknown, sshd is going to
-# return our pam module. If we want to provide a cleaner ux, we'll need
-# to do it in the client.
+\# Regardless on what we try to do on account unknown, sshd is going to
+\# return our pam module. If we want to provide a cleaner ux, we'll need
+\# to do it in the client.
 
 sudo useradd -s /usr/bin/false -M globus-mapping
 
@@ -44,13 +44,13 @@ require {
         class tcp_socket name_connect;
 }
 
-#============= sshd_t ==============
+\#============= sshd_t ==============
 
-#!!!! This avc can be allowed using one of the these booleans:
-#     authlogin_yubikey, nis_enabled
+\#!!!! This avc can be allowed using one of the these booleans:
+\#     authlogin_yubikey, nis_enabled
 allow sshd_t http_port_t:tcp_socket name_connect;
 
-########################## END SELINUX MODULE globus-ssh.te ##########################
+\########################## END SELINUX MODULE globus-ssh.te ##########################
 
 checkmodule -M -m -o globus-ssh.mod globus-ssh.te
 semodule_package -o globus-ssh.pp -m globus-ssh.mod
