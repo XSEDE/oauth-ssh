@@ -8,6 +8,10 @@ $(VIRTUALENV):
 develop: $(VIRTUALENV)
 	$(VIRTUALENV)/bin/python setup.py develop
 
+package: $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install wheel
+	$(VIRTUALENV)/bin/python setup.py bdist_wheel
+
 clean:
 	rm -rf globus_ssh.egg-info
 	rm -rf venv
