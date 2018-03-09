@@ -14,12 +14,12 @@ The capability to display the access token for cut-n-paste into other SSH client
 Tested with Python 2.7.5.
 
 #### PyPi Installation (recommended)
-sudo yum install -y epel-release
-sudo yum install -y python2-pip
+sudo yum install -y epel-release  
+sudo yum install -y python2-pip  
 sudo pip install virtualenv  
-virtualenv ~/globus-ssh/
+virtualenv ~/globus-ssh/  
 . ~/globus-ssh/bin/activate (if sh, bash)  
-pip globus-ssh
+pip globus-ssh  
 
 #### Development Installation (Non PyPi)
 sudo yum install -y epel-release git gcc python-devel  
