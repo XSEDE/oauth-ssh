@@ -28,7 +28,6 @@ sudo pip install virtualenv
 ssh-keyscan github.com >> ~/.ssh/known_hosts  
 git clone git@github.com:globusonline/globus-ssh.git  
 cd globus-ssh  
-git checkout develop/prototype  
 make develop  
 . ./venv/bin/activate (if sh, bash)  
 
