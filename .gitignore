@@ -4,3 +4,5 @@
 # C extensions
 *.so
 *.o
+
+credentials.c

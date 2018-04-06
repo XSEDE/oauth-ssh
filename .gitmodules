@@ -1,3 +1,0 @@
-[submodule "jsmn"]
-	path = pam_oauth2/jsmn
-	url = git://github.com/zserge/jsmn.git
