@@ -2,7 +2,7 @@ import os
 import ConfigParser
 from .token import Token
 
-"""Provies the interface for saving/retrieving tokens from disk.
+"""Provides the interface for saving/retrieving tokens from disk.
 
 ConfigParser already provides a generic configuration file functionality.
 Our Config class makes the config file look like a coherent set of data 
