@@ -1,6 +1,6 @@
 import os
 import click
-from . import auth, ssh, scp
+from . import auth, ssh, scp, token
 from .config import Config
 from .constants import *
 
@@ -41,19 +41,19 @@ def delete_token(fqdn):
 # if <token> is not None, it is safe to assume that access_token is valid
 def try_get_access_token(fqdn):
     """Non interactively search for a valid access token, refresh if necessary."""
-    token  = load_token(fqdn)
-    scopes = SCOPES_FORMAT.format(fqdn=fqdn)
+    t = load_token(fqdn)
+    s = SCOPES_FORMAT.format(fqdn=fqdn)
 
-    if token and token.has_scopes(scopes):
-        if token['access_token']:
-            (errmsg, validity) = auth.is_token_valid(token['access_token'])
+    if t and token.has_scopes(t, s):
+        if t['access_token']:
+            (errmsg, validity) = auth.is_token_valid(t['access_token'])
             if errmsg:
                 return (errmsg, None)
             if validity:
-                return (None, token)
+                return (None, t)
 
-        if token['refresh_token']:
-            (errmsg, new_token) = auth.refresh_token(token)
+        if t['refresh_token']:
+            (errmsg, new_token) = auth.refresh_token(t)
             if errmsg:
                 return (errmsg, None)
             return (None, new_token)
