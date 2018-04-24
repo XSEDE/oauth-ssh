@@ -32,6 +32,18 @@ class Token():
         """Return the value of local var 'key' to support opaque handlers"""
         return vars(self)[key]
 
+    def __eq__(self, other): 
+        """Determine if two Tokens are identical"""
+        if other is None:
+            return False
+        try:
+            for k in self:
+                if self[k] != other[k]:
+                    return False
+        except:
+            return False
+        return True
+
 def has_scopes(token, scopes):
         if token.scope is None:
 		return False;
