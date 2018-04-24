@@ -18,8 +18,8 @@ sudo yum install -y epel-release git gcc python-devel
 sudo yum install -y python2-pip  
 sudo pip install virtualenv  
 virtualenv ~/globus-ssh/  
-. ~/globus-ssh/bin/activate (if sh, bash)  
-pip globus-ssh  
+. ~/globus-ssh/bin/activate  
+pip install globus-ssh  
 
 #### Development Installation (Non PyPi)
 sudo yum install -y epel-release git gcc python-devel  
