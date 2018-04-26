@@ -2,7 +2,8 @@ import os
 import pty
 import psutil
 
-from . import process
+from . import process, constants
+from inject_token import InjectToken
 
 """
 Module for handling interactions with SSH. Currently supports OpenSSH_7.4p1.
@@ -30,48 +31,7 @@ def find_host_name(arg_list):
         return arg.split('@')[-1]
     return None
 
-class InjectToken():
-    PROMPT="Enter your Globus Auth token:"
-
-    def __init__(self, access_token):
-        self._access_token = access_token
-        self._prompt_found = False
-        self._data = ""
-
-    def __call__(self, fd):
-        if self._prompt_found == True:
-            return os.read(fd, 1024)
-        data = self._data + os.read(fd, 1024)
-        self._data = ""
-        if InjectToken.PROMPT in data:
-            os.write(fd, self._access_token + "\n")
-            self._prompt_found = True
-            data = data.replace(InjectToken.PROMPT, "")
-            if len(data) == 0:
-                return self(fd)
-            return data
-        data = self._save_split_prompt(data)
-        if len(data) == 0:
-            return self(fd)
-        return data
-
-    def _trailing_prompt_chars(self, data):
-        if data.endswith(InjectToken.PROMPT):
-            return len(InjectToken.PROMPT)
-        for i in range(1, len(InjectToken.PROMPT)):
-            if data.endswith(InjectToken.PROMPT[:-i]):
-                return len(InjectToken.PROMPT) - i
-        return 0
-
-    def _save_split_prompt(self, data):
-        i = self._trailing_prompt_chars(data)
-        if i == 0:
-            return data
-        self._data = data[len(data)-i:]
-        return data[0:-i]
-
-        
 def run(access_token, ssh_args):
     """Spawn SSH with ssh_args and inject the access token."""
 
-    return process.spawn(["ssh"] + list(ssh_args), InjectToken(access_token))
+    return process.spawn(["ssh"] + list(ssh_args), InjectToken(constants.PROMPT, access_token))

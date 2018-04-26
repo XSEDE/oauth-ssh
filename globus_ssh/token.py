@@ -38,7 +38,7 @@ class Token():
             return False
         try:
             for k in self:
-                if self[k] != other[k]:
+                if str(self[k]) != str(other[k]):
                     return False
         except:
             return False

@@ -43,9 +43,7 @@ class Config():
         if not self._config.has_section(fqdn):
             self._config.add_section(fqdn)
         for k in token:
-           if token[k] is None:
-               continue
-           self._config.set(fqdn, k, token[k])
+           self._config.set(fqdn, k, str(token[k]))
         self._flush()
 
     def delete_token(self, fqdn):

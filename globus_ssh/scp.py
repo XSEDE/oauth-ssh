@@ -1,12 +1,7 @@
-import os
-import sys
-import pty
-import psutil
-
-from . import ssh, process
+from . import process, constants
+from inject_token import InjectToken
 
 """ Module for handling interactions with SCP. Currently supports OpenSSH_7.4p1."""
-
 
 #usage: scp [-12346BCpqrv] [-c cipher] [-F ssh_config] [-i identity_file]
 #           [-l limit] [-o ssh_option] [-P port] [-S program]
@@ -33,4 +28,4 @@ def find_host_name(arg_list):
 def run(access_token, scp_args):
     """Spawn SCP with scp_args and inject the access token."""
 
-    return process.spawn(["scp"] + list(scp_args), ssh.InjectToken(access_token))
+    return process.spawn(["scp"] + list(scp_args), InjectToken(constants.PROMPT, access_token))
