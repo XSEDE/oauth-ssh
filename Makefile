@@ -1,4 +1,5 @@
 VIRTUALENV=venv
+NOSETESTS=$(VIRTUALENV)/bin/nosetests
 
 $(VIRTUALENV):
 	virtualenv $(VIRTUALENV)
@@ -7,6 +8,12 @@ $(VIRTUALENV):
 
 develop: $(VIRTUALENV)
 	$(VIRTUALENV)/bin/python setup.py develop
+
+$(NOSETESTS): $(VIRTUALENV)
+	$(VIRTUALENV)/bin/pip install nose
+
+test: $(NOSETESTS)
+	nosetests -v
 
 package: $(VIRTUALENV)
 	$(VIRTUALENV)/bin/pip install wheel
@@ -17,5 +24,4 @@ clean:
 	rm -rf venv
 	find . -name '*pyc' -exec rm {} \;
 
-
-.PHONY: clean develop
+.PHONY: clean develop test
