@@ -1,5 +1,5 @@
 from . import process, constants
-from inject_token import InjectToken
+from .inject_token_once import InjectTokenOnce
 
 """ Module for handling interactions with SCP. Currently supports OpenSSH_7.4p1."""
 
@@ -28,4 +28,4 @@ def find_host_name(arg_list):
 def run(access_token, scp_args):
     """Spawn SCP with scp_args and inject the access token."""
 
-    return process.spawn(["scp"] + list(scp_args), InjectToken(constants.PROMPT, access_token))
+    return process.spawn(["scp"] + list(scp_args), InjectTokenOnce(constants.PROMPT, access_token + '\n'))

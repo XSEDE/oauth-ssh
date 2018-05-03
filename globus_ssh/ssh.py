@@ -3,7 +3,7 @@ import pty
 import psutil
 
 from . import process, constants
-from inject_token import InjectToken
+from .inject_token_once import InjectTokenOnce
 
 """
 Module for handling interactions with SSH. Currently supports OpenSSH_7.4p1.
@@ -34,4 +34,4 @@ def find_host_name(arg_list):
 def run(access_token, ssh_args):
     """Spawn SSH with ssh_args and inject the access token."""
 
-    return process.spawn(["ssh"] + list(ssh_args), InjectToken(constants.PROMPT, access_token))
+    return process.spawn(["ssh"] + list(ssh_args), InjectTokenOnce(constants.PROMPT, access_token + '\n'))

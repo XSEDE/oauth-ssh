@@ -2,7 +2,7 @@
 This repo contains the globus-ssh and globus-scp Python wrappers that make SSH and SCP compatibile with Globus Auth. The wrappers launch the ssh/scp process, pass it all user supplied arguments, monitor for the Globus access token request prompt and injects the access token. globus-ssh also includes utilities for managing access tokens.
 
 #### Supported Platforms
-Tested on CentOS Linux release 7.4.1708 (Core). Please report other platforms.
+Tested on CentOS Linux release 7.4.1708 (Core) and Fedora release 27. Please report other platforms.
 
 #### Supported OpenSSH Versions
 Tested with OpenSSH_7.4p1, OpenSSL 1.0.2k-fips  26 Jan 2017. Please report other platforms.
@@ -11,10 +11,10 @@ Tested with OpenSSH_7.4p1, OpenSSL 1.0.2k-fips  26 Jan 2017. Please report other
 The capability to display the access token for cut-n-paste into other SSH clients is forthcoming.
 
 #### Supported Python Versions
-Tested with Python 2.7.5.
+Tested with Python 2.7.1-2.7.14 and 3.6.0-3.6.5.
 
 #### PyPi Installation (recommended)
-sudo yum install -y epel-release git gcc python-devel  
+sudo yum install -y epel-release gcc python-devel  
 sudo yum install -y python2-pip  
 sudo pip install virtualenv  
 virtualenv ~/globus-ssh/  
@@ -22,14 +22,46 @@ virtualenv ~/globus-ssh/
 pip install globus-ssh  
 
 #### Development Installation (Non PyPi)
+In general, the build system supports the following syntax:
+```shell
+make {develop|test|package} [PYTHON_VERSION=<x.y.z>]
+  develop - installation from source, recommended for new development
+  test    - installation from source, run unit tests against install
+  package - prepare a pypi package ready for upload
+  
+  PYTHON_VERSION is optional. When it is not given, virtualenv and the default
+  system python installation is used to install globus-ssh to 'venv_system/'.
+  When PYTHON_VERSION is given, pyenv and pyenv-virtualenv are used to build
+  a virtual environment against the given python version. You must choose a 
+  python version supported by pyenv.
+```
+
+Installation of prerequisites:
+```shell
 sudo yum install -y epel-release git gcc python-devel  
 sudo yum install -y python2-pip  
+```
+
+Installation for general development against the system default python:
+```shell
 sudo pip install virtualenv  
-ssh-keyscan github.com >> ~/.ssh/known_hosts  
 git clone git@github.com:globusonline/globus-ssh.git  
 cd globus-ssh  
-make develop  
-. ./venv/bin/activate (if sh, bash)  
+make {develop|test|package}
+. ./venv_system/bin/activate  
+```
+Installation for version-specific python debugging and testing:
+```shell
+sudo yum install -y zlib-devel openssl-devel
+git clone https://github.com/pyenv/pyenv.git
+export PYENV_ROOT=`pwd`/pyenv
+export PATH="${PYENV_ROOT}/bin:$PATH"
+git clone https://github.com/pyenv/pyenv-virtualenv.git ${PYENV_ROOT}/plugins/pyenv-virtualenv
+git clone git@github.com:globusonline/globus-ssh.git  
+cd globus-ssh
+make {develop|test|package} PYTHON_VERSION=x.y.z
+. .${PYENV_ROOT}/venv_x.y.z/bin/activate  
+```
 
 #### Usage
 Usage: globus-ssh [OPTIONS] COMMAND [ARGS]...

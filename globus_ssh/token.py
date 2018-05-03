@@ -24,6 +24,9 @@ class Token():
         self.resource_server    = kw.get('resource_server',    None)
         self.expires_at_seconds = kw.get('expires_at_seconds', None)
 
+        if self.expires_at_seconds is not None:
+            self.expires_at_seconds = int(self.expires_at_seconds)
+
     def __iter__(self):
         """Return an iter of our variables to support opaque handlers"""
         return iter(vars(self))
@@ -32,23 +35,23 @@ class Token():
         """Return the value of local var 'key' to support opaque handlers"""
         return vars(self)[key]
 
-    def __eq__(self, other): 
+    def __eq__(self, rhs): 
         """Determine if two Tokens are identical"""
-        if other is None:
+        if rhs is None:
             return False
         try:
             for k in self:
-                if str(self[k]) != str(other[k]):
+                if self[k] != rhs[k]:
                     return False
         except:
             return False
         return True
 
 def has_scopes(token, scopes):
-        if token.scope is None:
-		return False;
-        for s in scopes.split():
-            if not s in token.scope.split():
-                return False
-        return True
+    if token.scope is None:
+        return False;
+    for s in scopes.split():
+        if not s in token.scope.split():
+            return False
+    return True
 
