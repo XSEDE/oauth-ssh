@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='globus_ssh',
-    version=0.2,
+    version=0.3,
     description='SSH with Globus Auth',
     long_description=open("README.rst").read(),
     url='https://github.com/globus/globus-ssh',

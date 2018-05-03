@@ -56,7 +56,7 @@ $(NOSETESTS): $(VENV_ROOT)
 
 package: $(VENV_ROOT)
 	$(PIP) install wheel
-	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py bdist_wheel
+	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py bdist_wheel --universal
 
 clean:
 	rm -rf globus_ssh.egg-info
