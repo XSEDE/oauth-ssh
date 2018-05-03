@@ -1,13 +1,6 @@
 import sys
 from setuptools import setup
 
-print sys.version_info
-if sys.version_info >= (2, 6) and sys.version_info < (3):
-    raise NotImplementedError("""\n
-####################################################
-# globus-ssh currently supports python version 2.7 #
-####################################################""")
-
 setup(
     name='globus_ssh',
     version=0.2,
@@ -19,7 +12,7 @@ setup(
     packages=['globus_ssh'],
 
     # Only enforced with setuptools 24.2.0+ and pip 9.0.0+
-    python_requires='>=2.6, <3',
+    python_requires='>=2.7',
 
     install_requires=[
         'globus-sdk>=1.5.0',
@@ -40,5 +33,6 @@ setup(
         "Operating System :: POSIX",
         "Natural Language :: English",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
     ],
 )

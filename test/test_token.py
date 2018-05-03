@@ -1,7 +1,7 @@
 import globus_ssh.token as T
 
 class TestToken():
-    field = vars(T.Token()).keys()[0]
+    field = list(vars(T.Token()))[0]
 
     def test_iter(self):
         # Is it iterable
@@ -19,30 +19,36 @@ class TestToken():
             assert False
         assert True
 
-    def test_eq_self(self):
-        key   = vars(T.Token()).keys()[0]
+    def test_eq_self_str(self):
+        key   = 'scope'
         value = "XXX"
         t     = T.Token(**{key:value})
         assert(t == t)
 
+    def test_eq_self_int(self):
+        key   = 'expires_at_seconds'
+        value = 4
+        t     = T.Token(**{key:value})
+        assert(t == t)
+
     def test_neq_token(self):
-        key   = vars(T.Token()).keys()[0]
+        key   = 'scope'
         assert(T.Token(**{key:"XXX"}) != T.Token(**{key:"YYY"}))
 
     def test_neq_none(self):
-        key   = vars(T.Token()).keys()[0]
-        value = "XXX"
+        key   = 'scope'
+        value = 'XXX'
         t     = T.Token(**{key:value})
         assert(t != None)
 
     def test_neq_basic_type(self):
-        key = vars(T.Token()).keys()[0]
+        key   = 'scope'
         assert(T.Token(**{key:"XXX"}) != 1)
 
     def test_neq_non_token(self):
         class X():
             pass
-        key = vars(T.Token()).keys()[0]
+        key   = 'scope'
         assert(T.Token(**{key:"XXX"}) != X())
 
 def test_has_scopes():

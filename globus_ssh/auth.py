@@ -3,6 +3,9 @@ import globus_sdk
 from .token import Token
 from .constants import *
 
+import sys
+if sys.version[0]=="3": raw_input=input
+
 """This module provides wrappers for calls to Globus Auth via Globus SDK"""
 
 def _create_token(token_response):
@@ -10,7 +13,7 @@ def _create_token(token_response):
     # Assumptions:
     #   Only 1 token is ever returned from Auth (refresh or auth code)
     assert len(token_response.by_resource_server) == 1
-    return Token(**token_response.by_resource_server.values()[0])
+    return Token(**list(token_response.by_resource_server.values())[0])
 
 
 def is_token_valid(token_string):

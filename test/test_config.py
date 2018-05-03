@@ -18,13 +18,11 @@ class TestConfig():
 
     @classmethod
     def setup_class(cls):
-        #cls.temp_file = tempfile.NamedTemporaryFile()
         cls.umask_value = os.umask(0)
         os.umask(cls.umask_value)
  
     @classmethod
     def teardown_class(cls):
-        #cls.temp_file = None
         os.umask(cls.umask_value)
         cls.umask_value = None
 
@@ -38,25 +36,33 @@ class TestConfig():
         temp_file = _create_temp_file()
         assert (Config(temp_file.name).load_token(section) == None)
 
-    def test_store_load_token(self):
+    def test_store_load_token_str(self):
         section = _create_random_string(6)
-        key=vars(Token()).keys()[0]
+        key='scope'
         value="XXX"
+        temp_file = _create_temp_file()
+        Config(temp_file.name).save_token(section, Token(**{key:value}))
+        assert (Config(temp_file.name).load_token(section) == Token(**{key:value}))
+
+    def test_store_load_token_int(self):
+        section = _create_random_string(6)
+        key='expires_at_seconds'
+        value=12
         temp_file = _create_temp_file()
         Config(temp_file.name).save_token(section, Token(**{key:value}))
         assert (Config(temp_file.name).load_token(section) == Token(**{key:value}))
 
     def test_delete_token(self):
         section = _create_random_string(6)
-        key=vars(Token()).keys()[0]
-        value="XXX"
+        key     = 'scope'
+        value   = "XXX"
         Config(_create_temp_file().name).save_token(section, Token(**{key:value}))
         Config(_create_temp_file().name).delete_token(section)
         assert (Config(_create_temp_file().name).load_token(section) == None)
 
     def test_preserve_umask(self):
         section   = _create_random_string(6)
-        key       = vars(Token()).keys()[0]
+        key       = 'scope'
         value     = "XXX"
         temp_file = _create_temp_file()
 
@@ -72,22 +78,24 @@ class TestConfig():
 
     def test_permissions(self):
         section      = _create_random_string(6)
-        key          = vars(Token()).keys()[0]
+        key          = 'scope'
         value        = "XXX"
         temp_file    = _create_temp_file()
         initial_mask = os.umask(0)
 
+        perms = stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO
+
         # Test config file permissions for save_token()
-        os.chmod(temp_file.name, 0777)
-        assert oct(os.stat(temp_file.name).st_mode&0777) == oct(0777)
+        os.chmod(temp_file.name, perms)
+        assert os.stat(temp_file.name).st_mode&perms == perms
         Config(temp_file.name).save_token(section, Token(**{key:value}))
-        assert oct(os.stat(temp_file.name).st_mode&0777) == oct(0600)
+        assert os.stat(temp_file.name).st_mode&perms == stat.S_IRUSR|stat.S_IWUSR
 
         # Test config file permissions for delete_token()
-        os.chmod(temp_file.name, 0777)
-        assert oct(os.stat(temp_file.name).st_mode&0777) == oct(0777)
+        os.chmod(temp_file.name, stat.S_IRWXU|stat.S_IRWXG|stat.S_IRWXO)
+        assert os.stat(temp_file.name).st_mode&perms == perms
         Config(temp_file.name).delete_token(section)
-        assert oct(os.stat(temp_file.name).st_mode&0777) == oct(0600)
+        assert os.stat(temp_file.name).st_mode&perms == stat.S_IRUSR|stat.S_IWUSR
 
         # Reset our umask
         os.umask(initial_mask)

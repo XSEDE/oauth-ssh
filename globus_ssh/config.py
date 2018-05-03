@@ -1,6 +1,10 @@
 import os
-import ConfigParser
 from .token import Token
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 """Provides the interface for saving/retrieving tokens from disk.
 
@@ -29,14 +33,18 @@ class Config():
 
     def __init__(self, file):
         self._file   = file
-        self._config = ConfigParser.SafeConfigParser()
+        self._config = configparser.SafeConfigParser()
         self._config.read(self._file)
 
     def load_token(self, fqdn):
         """Load section 'fqdn', if present, and convert to Token"""
         if not self._config.has_section(fqdn):
             return None;
-        return Token(**dict(self._config.items(fqdn)))
+        kw=dict(self._config.items(fqdn))
+        for k in kw:
+            if kw[k] == 'None':
+                kw[k] = None
+        return Token(**kw)
 
     def save_token(self, fqdn, token):
         """Save section 'fqdn' using attributes of Token"""
@@ -57,7 +65,7 @@ class Config():
         mask = os.umask(0o177)
 
         try:
-            with open(self._file, 'wb') as configfile:
+            with open(self._file, 'w') as configfile:
                 self._config.write(configfile)
             os.chmod(self._file, 0o600)
 
