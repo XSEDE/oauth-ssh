@@ -2,7 +2,7 @@
 #include "endpoint_errors.h"
 #include "json.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 // Example Globus Auth API error:
 // {"errors": [{"status": "401", "id": "601c1b08-0792-11e8-aed2-0e47636aca6c", "code": "UNAUTHORIZED", "detail": "Basic auth failed", "title": "Unauthorized"}], "error_description": "Unauthorized", "error": "unauthorized"}

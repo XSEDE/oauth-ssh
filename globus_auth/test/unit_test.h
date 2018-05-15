@@ -1,13 +1,13 @@
 #ifndef UNIT_TEST_H
 #define UNIT_TEST_H
 
-#ifdef UNIT_TESTING
+#ifdef UNIT_TEST
  #include <stdarg.h>
  #include <stddef.h>
  #include <setjmp.h>
  #include <cmocka.h>
  #define static
-#endif /* UNIT_TESTING */
+#endif /* UNIT_TEST */
 
 #ifdef DEBUG
  #include <assert.h>

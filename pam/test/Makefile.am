@@ -3,19 +3,11 @@
 # All Rights Reserved.
 #
 
-TESTS = pam_test
+TESTS = test_utilities
 
-check_PROGRAMS   = pam_test
-pam_test_SOURCES = pam_test.c \
-                   test_common.c \
-                   ../pam.c \
-                   ../../credentials.c
+check_PROGRAMS   = test_utilities
+test_utilities_SOURCES = test_utilities.c ../utilities.c ../constants.c
 
-pam_test_LDFLAGS="-Wl,--wrap=pam_get_item"
-pam_test_LDADD = ../../globus_auth/libglobus_auth.la \
-                 ../../account_mapping/libaccount_mapping.la \
-                 -lcurl -lssl -lcrypto -ljson-c
+AM_CFLAGS = -DUNIT_TEST $(CMOCKA_CFLAGS) -std=c99
 
-AM_CFLAGS = -DUNIT_TEST
-AM_CPPFLAGS = -I../../globus_auth -I../../account_mapping -I../../
-
+LDADD=$(CMOCKA_LIBS)

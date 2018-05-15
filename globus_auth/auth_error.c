@@ -2,7 +2,7 @@
 
 #include "auth_error.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 struct auth_error *
 _auth_error_from_curl(struct _curl_error * ce)

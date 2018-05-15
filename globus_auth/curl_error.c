@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "curl_error.h"
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 /**********************************************************
  *

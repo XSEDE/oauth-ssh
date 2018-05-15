@@ -2,7 +2,7 @@
 
 #include "request.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 struct _request
 _request_init(_request_op_t op,

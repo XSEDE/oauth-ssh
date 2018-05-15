@@ -6,7 +6,7 @@
 
 #include "strings.h"
 #include "curl_wrapper.h"
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 void
 _string_free(struct _string s)

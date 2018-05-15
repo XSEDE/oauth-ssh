@@ -1,6 +1,6 @@
 #include "json.h"
 #include "strings.h"
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 // XXX in debug mode, I'd like this to assert() if an expected field is not found.
 // XXX and assert() when an unexpected field is found

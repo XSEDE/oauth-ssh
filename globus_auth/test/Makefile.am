@@ -19,16 +19,16 @@ check_PROGRAMS = test_authorize  \
 LDADD = ../libglobus_auth.la $(CMOCKA_LIBS)
 #LDADD = $(CURL_LIBS) $(SSL_LIBS) $(JSONC_LIBS) $(CMOCKA_LIBS)
 
-LIB_SOURCES=../authorize.c  \
-            ../clients.c    \
-            ../helpers.c    \
-            ../identities.c \
-            ../introspect.c \
-            ../json.c       \
-            ../rest.c       \
-            ../scopes.c     \
-            ../token.c      \
-            ../userinfo.c
+LIB_SOURCES=$(realpath ../authorize.c)  \
+            $(realpath ../clients.c)    \
+            $(realpath ../helpers.c)    \
+            $(realpath ../identities.c) \
+            $(realpath ../introspect.c) \
+            $(realpath ../json.c)       \
+            $(realpath ../rest.c)       \
+            $(realpath ../scopes.c)     \
+            $(realpath ../token.c)      \
+            $(realpath ../userinfo.c)
 
 
 test_authorize_SOURCES  = test_authorize.c $(LIB_SOURCES)
@@ -42,6 +42,6 @@ test_scopes_SOURCES     = test_scopes.c $(LIB_SOURCES)
 test_token_SOURCES      = test_token.c $(LIB_SOURCES)
 test_userinfo_SOURCES   = test_userinfo.c $(LIB_SOURCES)
 
-AM_CFLAGS = -DUNIT_TESTING
+AM_CFLAGS = -DUNIT_TEST
 AM_CPPFLAGS = -I.. $(CMOCKA_CFLAGS)
 

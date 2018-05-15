@@ -15,14 +15,12 @@
 #include <globus_auth.h>
 
 #include "credentials.h"
+#include "utilities.h"
+#include "constants.h"
 
-#ifdef UNIT_TEST
- #define static
-#endif /* UNIT_TEST */
-
-// XXX
 extern const char * SSHServiceID;
 extern const char * SSHServiceSecret;
+static const char * SSHScope = "https://auth.globus.org/scopes/ssh.sandbox.globuscs.info/ssh";
 
 /*
  * Notes about the "SSH for Globus Auth" PAM module design
@@ -58,138 +56,6 @@ extern const char * SSHServiceSecret;
  * globus-mapping to retry.
  */
 
-static int
-_get_client_access_token(pam_handle_t * pamh, const char ** access_token)
-{
-	int pam_err = PAM_SUCCESS;
-	struct pam_conv * conv = NULL;
-	struct pam_message msg;
-	const struct pam_message * msgp;
-	struct pam_response      * resp;
-
-	*access_token = NULL;
-
-	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
-	if (pam_err != PAM_SUCCESS)
-		return pam_err;
-
-	/*
-	 * We need to ask for the user's password. If this is SSH with password
-	 * authentication enabled, the user has already supplied the password and
-	 * it will be copied in as the response to any message we send with 'echo off'.
-	 * If this is SSH with challenge response enabled, the user will see our prompt.
-	 */
-	msg.msg_style = PAM_PROMPT_ECHO_OFF;
-	msg.msg       = "Enter your Globus Auth token: ";
-	msgp          = &msg;
-	resp          = NULL;
-	pam_err       = (*conv->conv)(1, &msgp, &resp, conv->appdata_ptr);
-
-	if (pam_err == PAM_SUCCESS)
-	{
-		*access_token = resp->resp;
-		free(resp);
-	}
-
-	return pam_err;
-}
-
-static int
-_display_client_message(pam_handle_t * pamh, const char * message)
-{
-	int                pam_err = PAM_SUCCESS;
-	struct pam_conv  * conv    = NULL;
-	struct pam_message msg;
-	const struct pam_message * msgp;
-	struct pam_response      * resp;
-
-	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
-	if (pam_err != PAM_SUCCESS)
-		return pam_err;
-
-	msg.msg_style = PAM_TEXT_INFO;
-	msg.msg       = message;
-	msgp          = &msg;
-
-	resp      = NULL;
-	pam_err   = (*conv->conv)(1, &msgp, &resp, conv->appdata_ptr);
-	if (resp != NULL && pam_err == PAM_SUCCESS)
-	{
-		free(resp->resp);
-		free(resp);
-	}
-
-	return pam_err;
-}
-
-static char *
-_build_account_msg(const char * const * account_list)
-{
-	const char * msg_prefix = "You can log in as ";
-
-	if (account_list == NULL || account_list[0] == NULL)
-		return strdup("You have no local accounts");
-
-	int length = strlen(msg_prefix);
-	for (int i = 0; account_list[i]; i++)
-	{
-		length += strlen(account_list[i]) + 2; /* ', ' */
-	}
-
-	char * msg = calloc(length+1, sizeof(char));
-	strcpy(msg, msg_prefix);
-
-	for (int i = 0; account_list[i]; i++)
-	{
-		strcat(msg, account_list[i]);
-		if (account_list[i+1])
-			strcat(msg, ", ");
-	}
-
-	return msg;
-}
-
-static int
-_display_valid_accounts(pam_handle_t * pamh, const char * const * account_list)
-{
-	char * message = _build_account_msg(account_list);
-	int pam_err = _display_client_message(pamh, message);
-	free(message);
-	return pam_err;
-}
-
-static int
-_get_requested_account(pam_handle_t * pamh, const char ** local_account)
-{
-	int pam_err = PAM_SUCCESS;
-
-	*local_account = NULL;
-
-	return pam_get_user(pamh, local_account, NULL);
-}
-
-static int
-_is_string_in_list(const char * string, const char * const * list)
-{
-	for (int i = 0; list && list[i]; i++)
-	{
-		if (strcmp(string, list[i]) == 0)
-			return 1;
-	}
-
-	return 0;
-}
-
-// XXX Generalize this
-static const char * SSHScope = "https://auth.globus.org/scopes/ssh.sandbox.globuscs.info/ssh";
-
-// XXX Handle this when we have multiple FQDNs
-static int
-_has_scope(const char * Scope, const char * const * ListOfScopes)
-{
-	return _is_string_in_list(Scope, ListOfScopes);
-}
-
 void
 _debug(const char * format, ...)
 {
@@ -208,11 +74,16 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
 	int pam_err = PAM_SUCCESS;
 
+	struct pam_conv * conv = NULL;
+	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
+	if (pam_err != PAM_SUCCESS)
+		return pam_err;
+
 	/*
 	 * Ask the user for their access token
 	 */
-	const char * access_token = NULL;
-	pam_err = _get_client_access_token(pamh, &access_token);
+	char * access_token = NULL;
+	pam_err = get_client_access_token(conv, AccessTokenPrompt, &access_token);
 	if (pam_err != PAM_SUCCESS)
 		goto cleanup;
 
@@ -220,17 +91,16 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	 * Introspect the token 
 	 */
 	struct auth_introspect * introspect = NULL;
-	struct auth_error * ae = auth_introspect_token(SSHServiceID, 
-	                                               SSHServiceSecret,
-	                                               access_token,
-	                                               1,
-	                                               &introspect);
+	struct auth_error * error = auth_introspect_token(SSHServiceID, 
+	                                                  SSHServiceSecret,
+	                                                  access_token,
+	                                                  1,
+	                                                  &introspect);
 
-	if (ae)
+	if (error)
 	{
-		_debug("There should be a message here!!");
-		_debug(ae->error_message);
-		auth_free_error(ae);
+		_debug(error->error_message);
+		auth_free_error(error);
 		pam_err = PAM_SYSTEM_ERR;
 		goto cleanup;
 	}
@@ -248,7 +118,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	/*
 	 * Check for the appropriate scope(s)
 	 */
-	if (!_has_scope(SSHScope, (const char **)introspect->scopes))
+	if (!has_scope(SSHScope, (const char **)introspect->scopes))
 	{
 		_debug("token does not have proper scope");
 		pam_err = PAM_AUTH_ERR;
@@ -264,29 +134,34 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	 * Get the requested local account
 	 */
 	const char * requested_account = NULL;
-	pam_err = _get_requested_account(pamh, &requested_account);
+	pam_err = pam_get_user(pamh, &requested_account, NULL);
 	if (pam_err != PAM_SUCCESS)
 		goto cleanup;
 
 	/*
-	 * If requested local account is 'globus-mapping', print mapped accounts and exit
-	 * XXX Is this a security risk?
+	 * If requested local account is 'globus-mapping', print mapped accounts
+	 * and exit
 	 */
 	if (strcmp(requested_account, "globus-mapping") == 0)
 	{
-		pam_err = _display_valid_accounts(pamh, (const char * const *)mapped_local_accounts);
+		const char * const * tmp = (const char * const *) mapped_local_accounts;
+		char * acct_map_msg = build_acct_map_msg(tmp);
+
+		pam_err = display_client_message(conv, acct_map_msg);
+		free(acct_map_msg);
+
 		if (pam_err == PAM_SUCCESS)
 			pam_err = PAM_MAXTRIES;
 		goto cleanup;
 	}
 
 	/*
-	 * If requested local account is in mapped accounts, success. XXX we should display a message.
-	 * Is this a security risk?
-	 * Regardless of what we return there, if the account is not real, SSHD is going to retry us
-	 * so that an attacker can not guess account names.
+	 * If requested local account is in mapped accounts, success.
+	 * Regardless of what we return there, if the account is not real,
+	 * SSHD is going to retry us so that an attacker can not guess account
+	 * names.
 	 */
-	if (!_is_string_in_list(requested_account, (const char * const *)mapped_local_accounts))
+	if (!string_in_list(requested_account, (const char * const *)mapped_local_accounts))
 		pam_err = PAM_USER_UNKNOWN;
 
 cleanup:

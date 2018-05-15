@@ -3,7 +3,7 @@
 #include "response.h"
 #include "strings.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 void
 _response_free(struct _response r)

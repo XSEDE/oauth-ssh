@@ -4,7 +4,7 @@
 #include "strings.h"
 #include "json.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 struct auth_introspect *
 _auth_introspect_from_json_str(const char * j_string)

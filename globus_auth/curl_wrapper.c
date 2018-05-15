@@ -6,7 +6,7 @@
 #include "request.h"
 #include "response.h"
 
-#include "tests/unit_test.h"
+#include "test/unit_test.h"
 
 /**********************************************************
  *

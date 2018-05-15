@@ -2,8 +2,12 @@
 ## Copyright The University of Chicago
 ## All Rights Reserved.
 ##
-##SUBDIRS = utils tests
+
 SUBDIRS = . utils
+
+if UNIT_TEST
+    SUBDIRS += test
+endif
 
 ACLOCAL_AMFLAGS = -I m4
 
