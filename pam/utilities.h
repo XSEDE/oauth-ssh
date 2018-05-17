@@ -33,8 +33,4 @@ int
 string_in_list(const char * string, 
                const char * const list[]);
 
-int
-has_scope(const char * Scope, 
-          const char * const ListOfScopes[]);
-
 #endif /* _UTILITIES_H_ */

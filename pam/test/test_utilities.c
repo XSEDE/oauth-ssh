@@ -147,18 +147,6 @@ test_string_in_list(void ** state)
 	assert_false(string_in_list("bob", NULL));
 }
 
-static void
-test_has_scope(void ** state)
-{
-	const char * list[] = {
-		"https://auth.globus.org/scopes/ssh.demo.globus.org/ssh",
-		NULL,
-	};
-
-	assert_true(has_scope(list[0], list));
-	assert_false(has_scope("openid", list));
-}
-
 int
 main()
 {
@@ -169,7 +157,6 @@ main()
 		cmocka_unit_test(test_build_acct_map_msg),
 		cmocka_unit_test(test_build_acct_map_msg),
 		cmocka_unit_test(test_string_in_list),
-		cmocka_unit_test(test_has_scope),
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

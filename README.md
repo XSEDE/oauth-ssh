@@ -29,10 +29,18 @@ PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 \# return our pam module. If we want to provide a cleaner ux, we'll need
 \# to do it in the client.
 
+auth [pam options] pam_globus.so [globus-ssh.conf [section]]
+
 sudo useradd -s /usr/bin/false -M globus-mapping
 
 /etc/ssh/sshd_config
 ChallengeResponseAuthentication yes
+
+/etc/globus/globus-ssh.conf
+[default]
+auth_client_id  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+auth_client_secret  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 
 ########################## START SELINUX MODULE globus-ssh.te ##########################
 

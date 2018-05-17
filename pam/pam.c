@@ -14,13 +14,10 @@
 #include <account_mapping.h>
 #include <globus_auth.h>
 
-#include "credentials.h"
 #include "utilities.h"
 #include "constants.h"
-
-extern const char * SSHServiceID;
-extern const char * SSHServiceSecret;
-static const char * SSHScope = "https://auth.globus.org/scopes/ssh.sandbox.globuscs.info/ssh";
+#include "config.h"
+#include "scope.h"
 
 /*
  * Notes about the "SSH for Globus Auth" PAM module design
@@ -74,6 +71,65 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 {
 	int pam_err = PAM_SUCCESS;
 
+	/*
+	 * Default config options.
+	 */
+	const char * config_file = DefaultConfigFile;
+	const char * config_section = DefaultConfigSection;
+
+	/*
+	 * Parse provided options.
+	 */
+	if (argc >= 1) config_file = argv[0];
+	if (argc >= 2) config_section = argv[1];
+
+	/*
+	 * Load our config
+	 */
+	struct config * config = config_init();
+
+	int retval = config_load(config, config_file);
+	if (retval < 0)
+	{
+		_debug("COULD NOT READ %s: %s", config_file, strerror(-retval));
+		pam_err  = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	if (retval > 0)
+	{
+		_debug("COULD NOT PARSE %s LINE %d", config_file, retval);
+		pam_err  = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	char * auth_client_id;
+	config_get_value(config, 
+	                 config_section, 
+	                 "auth_client_id", 
+	                 &auth_client_id);
+
+	if (!auth_client_id)
+	{
+		_debug("auth_client_id IS MISSING FROM %s", config_file);
+		pam_err  = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	char * auth_client_secret;
+	config_get_value(config, 
+	                 config_section, 
+	                 "auth_client_secret", 
+	                 &auth_client_secret);
+
+	if (!auth_client_secret)
+	{
+		_debug("auth_client_secret IS MISSING FROM %s", config_file);
+		pam_err  = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+
 	struct pam_conv * conv = NULL;
 	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
 	if (pam_err != PAM_SUCCESS)
@@ -91,8 +147,8 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	 * Introspect the token 
 	 */
 	struct auth_introspect * introspect = NULL;
-	struct auth_error * error = auth_introspect_token(SSHServiceID, 
-	                                                  SSHServiceSecret,
+	struct auth_error * error = auth_introspect_token(auth_client_id, 
+	                                                  auth_client_secret,
 	                                                  access_token,
 	                                                  1,
 	                                                  &introspect);
@@ -118,8 +174,10 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	/*
 	 * Check for the appropriate scope(s)
 	 */
-	if (!has_scope(SSHScope, (const char **)introspect->scopes))
+	struct retval rv = has_scope(ScopeSuffix, (const char **)introspect->scopes);
+	if (rv.error || !rv.found)
 	{
+		if (rv.error) free(rv.error);
 		_debug("token does not have proper scope");
 		pam_err = PAM_AUTH_ERR;
 		goto cleanup;
@@ -165,6 +223,9 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 		pam_err = PAM_USER_UNKNOWN;
 
 cleanup:
+	if (config)
+		config_free(config);
+
 	if (access_token)
 		free((void *)access_token);
 

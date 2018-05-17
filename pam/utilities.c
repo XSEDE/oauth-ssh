@@ -144,10 +144,3 @@ string_in_list(const char * string,
 
 	return 0;
 }
-
-int
-has_scope(const char * Scope,
-          const char * const ListOfScopes[])
-{
-	return string_in_list(Scope, ListOfScopes);
-}
