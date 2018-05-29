@@ -11,11 +11,11 @@
 #define PAM_SM_AUTH
 #include <security/pam_modules.h>
 
-#include <account_mapping.h>
 #include <globus_auth.h>
 
 #include "utilities.h"
 #include "constants.h"
+#include "acct_map.h"
 #include "config.h"
 #include "scope.h"
 
@@ -103,15 +103,15 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 		goto cleanup;
 	}
 
-	char * auth_client_id;
+	char * auth_client_id = NULL;
 	config_get_value(config, 
 	                 config_section, 
-	                 "auth_client_id", 
+	                 ConfigOptClientID,
 	                 &auth_client_id);
 
 	if (!auth_client_id)
 	{
-		_debug("auth_client_id IS MISSING FROM %s", config_file);
+		_debug("%s IS MISSING FROM %s", ConfigOptClientID, config_file);
 		pam_err  = PAM_AUTHINFO_UNAVAIL;
 		goto cleanup;
 	}
@@ -119,16 +119,24 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	char * auth_client_secret;
 	config_get_value(config, 
 	                 config_section, 
-	                 "auth_client_secret", 
+	                 ConfigOptClientSecret,
 	                 &auth_client_secret);
 
 	if (!auth_client_secret)
 	{
-		_debug("auth_client_secret IS MISSING FROM %s", config_file);
+		_debug("%s IS MISSING FROM %s", ConfigOptClientSecret, config_file);
 		pam_err  = PAM_AUTHINFO_UNAVAIL;
 		goto cleanup;
 	}
 
+	char * idp_suffix = NULL;
+	config_get_value(config, config_section, ConfigOptIdpSuffix, &idp_suffix);
+	if (!idp_suffix)
+	{
+		_debug("%s IS MISSING FROM %s", ConfigOptIdpSuffix, config_file);
+		pam_err  = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
 
 	struct pam_conv * conv = NULL;
 	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
@@ -186,7 +194,21 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
 	/*
 	 * Map remote identities to local accounts
 	 */
-	char ** mapped_local_accounts = acct_map_id_to_accts((const char **)introspect->identities);
+	struct auth_identity ** auth_ids = NULL;
+    error = auth_get_identities(auth_client_id,
+                                auth_client_secret,
+	                            (const char **)introspect->identities,
+                                &auth_ids);
+
+	if (error)
+	{
+		_debug(error->error_message);
+		auth_free_error(error);
+		pam_err = PAM_SYSTEM_ERR;
+		goto cleanup;
+	}
+
+	char ** mapped_local_accounts = acct_map_idp_suffix(idp_suffix, auth_ids);
 
 	/*
 	 * Get the requested local account
@@ -234,6 +256,9 @@ cleanup:
 
 	if (mapped_local_accounts)
 		acct_map_free_list(mapped_local_accounts);
+
+	if (auth_ids)
+		auth_free_identities(auth_ids);
 
 	return pam_err;
 }

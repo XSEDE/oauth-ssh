@@ -29,11 +29,10 @@ LT_INIT
 
 
 AC_CONFIG_FILES(Makefile 
-                account_mapping/Makefile
                 globus_auth/Makefile 
                 globus_auth/utils/Makefile
                 pam/Makefile)
 
-AM_COND_IF([UNIT_TEST], [AC_CONFIG_FILES(pam/test/Makefile globus_auth/test/Makefile account_mapping/test/Makefile)])
+AM_COND_IF([UNIT_TEST], [AC_CONFIG_FILES(pam/test/Makefile globus_auth/test/Makefile)])
 
 AC_OUTPUT

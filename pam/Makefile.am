@@ -14,12 +14,11 @@ AM_CPPFLAGS = -I../globus_auth -I../account_mapping -I..
 
 lib_LTLIBRARIES    = pam_globus.la
 pam_globus_la_LDFLAGS = -module -shared
-pam_globus_la_SOURCES = config.c \
+pam_globus_la_SOURCES = acct_map.c \
+                        config.c \
                         constants.c \
                         pam.c \
                         scope.c \
                         utilities.c
 
-pam_globus_la_LIBADD = ../account_mapping/libaccount_mapping.la \
-                       ../globus_auth/libglobus_auth.la \
-                       -lpam
+pam_globus_la_LIBADD = ../globus_auth/libglobus_auth.la -lpam

@@ -50,12 +50,12 @@ const char * EMPTY   = "^" SPC "$";
 static int
 is_empty_line(const char * line)
 {
-        regmatch_t pmatch[3];
-        regex_t preg;
+	regmatch_t pmatch[3];
+	regex_t preg;
 
-        regcomp(&preg, EMPTY, REG_EXTENDED);
-        int retval = regexec(&preg, line, 3, pmatch, 0);
-        regfree(&preg);
+	regcomp(&preg, EMPTY, REG_EXTENDED);
+	int retval = regexec(&preg, line, 3, pmatch, 0);
+	regfree(&preg);
 
 	return (retval == 0);
 }
@@ -63,12 +63,12 @@ is_empty_line(const char * line)
 static int
 is_comment(const char * line)
 {
-        regmatch_t pmatch[3];
-        regex_t preg;
+	regmatch_t pmatch[3];
+	regex_t preg;
 
-        regcomp(&preg, COMMENT, REG_EXTENDED);
-        int retval = regexec(&preg, line, 3, pmatch, 0);
-        regfree(&preg);
+	regcomp(&preg, COMMENT, REG_EXTENDED);
+	int retval = regexec(&preg, line, 3, pmatch, 0);
+	regfree(&preg);
 
 	return (retval == 0);
 }
@@ -76,18 +76,18 @@ is_comment(const char * line)
 static int
 is_section(const char * line, char ** section)
 {
-        regmatch_t pmatch[3];
-        regex_t preg;
+	regmatch_t pmatch[3];
+	regex_t preg;
 
 	*section = NULL;
 
-        regcomp(&preg, SECTION, REG_EXTENDED);
-        int retval = regexec(&preg, line, 3, pmatch, 0);
+	regcomp(&preg, SECTION, REG_EXTENDED);
+	int retval = regexec(&preg, line, 3, pmatch, 0);
 	if (retval == 0)
 		*section = strndup(&line[pmatch[1].rm_so],
 		                    pmatch[1].rm_eo-pmatch[1].rm_so);
 
-        regfree(&preg);
+	regfree(&preg);
 
 	return (retval == 0);
 }
@@ -95,8 +95,8 @@ is_section(const char * line, char ** section)
 static int
 is_key_value(const char * line, char ** key, char ** value)
 {
-        regmatch_t pmatch[3];
-        regex_t preg;
+	regmatch_t pmatch[3];
+	regex_t preg;
 
 	*key = NULL;
 	*value = NULL;
