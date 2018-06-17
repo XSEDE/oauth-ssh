@@ -29,10 +29,9 @@ LT_INIT
 
 
 AC_CONFIG_FILES(Makefile 
-                globus_auth/Makefile 
-                globus_auth/utils/Makefile
-                pam/Makefile)
+                src/utils/Makefile
+                src/Makefile)
 
-AM_COND_IF([UNIT_TEST], [AC_CONFIG_FILES(pam/test/Makefile globus_auth/test/Makefile)])
+AM_COND_IF([UNIT_TEST], [AC_CONFIG_FILES(src/test/Makefile)])
 
 AC_OUTPUT

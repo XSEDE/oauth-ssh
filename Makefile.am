@@ -2,6 +2,6 @@
 ## Copyright The University of Chicago
 ## All Rights Reserved.
 ##
-SUBDIRS = globus_auth pam
+SUBDIRS = src
 
 ACLOCAL_AMFLAGS = -I m4

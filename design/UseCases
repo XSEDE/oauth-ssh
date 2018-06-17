@@ -1,0 +1,31 @@
+Use Case: User can map to account(s) as defined in a text file.
+
+1) Admin specifies the text file to use for account mapping.
+   A) Admin modifies config file, adds 'map_file <path>'
+   B) Pam modules reads option in on next instantiation.
+   C) If the option does not exist or is not parseable, an error message
+      is generated and sent to syslog and authentication fails.
+2) Admin may specifiy one or both idp_suffix and map_file.
+   A) If at least one option is not specified, an error is generated.
+3) Admin may only specify map_file zero or once; additional use of the config
+   option is ignored.
+4) Admin populates the map file one account mapping per line. Each line
+   consists of an Auth identity username or Auth identity id followed by
+   a local account name. The map file contains no sections.
+5) On user login, the map file is loaded if map_file was configured.
+   A) map file format violations are reported as errors via syslog
+6) On user login, if idp_suffix is also specified, both methods are used,
+   neither is given priority and ordering is not defined.
+7) User logs in as 'globus-mapping'
+   A) Pam module reports local account names mapped to with Auth identity id
+      or Auth identity usernames associated with the user's linked accounts
+   B) Each mapped account is listed only once.
+   C) Authentication fails
+   D) If the file does not exist or is not parseable, an error msg is sent to
+      syslog and authentication fails.
+8) User specifies account other than 'globus-mapping'
+   A) specified account matches mapping associated with one of the user's
+      linked identities. Authentication succeeds.
+   B) specified account does not match any mapped account. Authentication fails.
+   C) If the file does not exist or is not parseable, an error msg is sent to
+      syslog and authentication fails.

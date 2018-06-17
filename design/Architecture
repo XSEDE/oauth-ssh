@@ -1,0 +1,11 @@
+SSH Service -> Pam Module -> Syslog
+                          -> Pam (Pam callbacks to authenticating Process)
+                          -> Config
+                          -> introspect -> http
+                                        -> json
+                          -> identities -> http
+                                        -> json
+                          -> Acct Mapping -> IdP Suffix
+                                          -> Map File -> Config
+                          -> Globus Auth  -> curl
+                                          -> json
