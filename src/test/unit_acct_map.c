@@ -16,8 +16,7 @@
 /*******************************************
  *              MOCKS
  *******************************************/
-
-#include "mock_acct_map_module.c"
+#include "mock_acct_map_module.h"
 
 const char * AcctMapModuleMapFile = "MAP FILE";
 struct acct_map_module acct_map_module_map_file;

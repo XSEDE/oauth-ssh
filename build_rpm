@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+
+autoreconf -i
+CFLAGS="-Wall -O0 -ggdb3" PKG_CONFIG_PATH=/usr/local/cmocka-1.1.1/lib/pkgconfig/ ./configure
+make dist
+
+mkdir tmp/
+cd tmp
+
+mkdir BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
+cp ../globus_ssh-*.tar.gz SOURCES
+
+rpmbuild -v -bb --clean  ../packaging/fedora/globus-ssh.spec

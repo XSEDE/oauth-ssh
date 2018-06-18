@@ -4,7 +4,7 @@
 ##
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS=-I..
+AM_CPPFLAGS=-I$(srcdir)/..
 
 noinst_PROGRAMS  = get_identities introspect_token
 

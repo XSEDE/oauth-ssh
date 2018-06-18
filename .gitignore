@@ -1,6 +1,9 @@
 # vi(m) swap files:
 *.sw?
 
+globus-ssh.pp
+globus_ssh-0.1.tar.gz
+tmp/
 
 Makefile
 /Makefile.in

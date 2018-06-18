@@ -1,0 +1,7 @@
+# The format of this file is:
+#  - blank lines and lines starting with '#' are ingored
+#  - one key, value pair per line, separated by space
+#  - spaces are ignored except when delimiting key, value
+#  - each key must be a Auth identity id or username
+#  - each value must specify a local account
+

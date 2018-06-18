@@ -1,4 +1,3 @@
-
 static int
 initialize(void ** handle, const char * option)
 {
