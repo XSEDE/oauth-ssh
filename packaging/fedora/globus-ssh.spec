@@ -29,6 +29,8 @@ BuildRequires:  pkgconfig
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
+BuildRequires:  checkpolicy
+BuildRequires:  policycoreutils-python
 
 Requires:  libcurl
 Requires:  openssl
@@ -86,6 +88,10 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_globus.la
+
+/usr/bin/checkmodule -M -m -o globus-ssh.mod globus-ssh.te
+/usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.pp -m globus-ssh.mod
+rm ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 
 #
 # files section

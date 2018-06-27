@@ -1,7 +1,8 @@
 #!/usr/bin/bash
 
 autoreconf -i
-CFLAGS="-Wall -O0 -ggdb3" PKG_CONFIG_PATH=/usr/local/cmocka-1.1.1/lib/pkgconfig/ ./configure
+#CFLAGS="-Wall -O0 -ggdb3" PKG_CONFIG_PATH=/usr/local/cmocka-1.1.1/lib/pkgconfig/ ./configure
+./configure
 make dist
 
 mkdir tmp/

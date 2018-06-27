@@ -38,8 +38,6 @@ AM_PROG_AR
 LT_INIT
 
 
-AC_CONFIG_FILES(Makefile src/Makefile)
-
-AM_COND_IF([UNIT_TEST], [AC_CONFIG_FILES(src/test/Makefile)])
+AC_CONFIG_FILES(Makefile src/Makefile src/test/Makefile)
 
 AC_OUTPUT
