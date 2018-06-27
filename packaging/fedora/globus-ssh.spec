@@ -88,10 +88,10 @@ make %{?_smp_mflags}
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
 rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_globus.la
+rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 
 /usr/bin/checkmodule -M -m -o globus-ssh.mod globus-ssh.te
 /usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.pp -m globus-ssh.mod
-rm ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 
 #
 # files section
@@ -100,9 +100,8 @@ rm ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 %defattr(-,root,root,-)
 %{_docdir}/%{name}-%{version}/globus-ssh.pp
 %{_libdir}/security/pam_globus.*
-%config(noreplace) %{_sysconfdir}/globus/globus-ssh.conf
 %config(noreplace) %{_sysconfdir}/globus/globus-acct-map
-%attr(0600,root,root) %{_sysconfdir}/globus/globus-ssh.conf
+%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/globus/globus-ssh.conf
 
 #
 # install/uninstall sections

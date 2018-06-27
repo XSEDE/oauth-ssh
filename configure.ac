@@ -8,16 +8,6 @@ AC_INIT([globus_ssh], [0.1], [support@globus.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CHECK_PROG(CHECKMODULE, checkmodule, yes)
-if test x"$CHECKMODULE" != x"yes"; then
-	AC_MSG_ERROR([Please install checkpolicy])
-fi
-
-AC_CHECK_PROG(SEMODULE_PACKAGE, semodule_package, yes)
-if test x"$SEMODULE_PACKAGE" != x"yes"; then
-	AC_MSG_ERROR([Please install policycoreutils-python])
-fi
-
 PKG_CHECK_MODULES([CURL],   [libcurl],[], [])
 PKG_CHECK_MODULES([SSL],    [libssl], [], [])
 PKG_CHECK_MODULES([JSONC],  [json-c], [], [])
