@@ -12,6 +12,7 @@ UNIT_TESTS  = unit_acct_map \
               unit_credentials \
               unit_http \
               unit_json \
+              unit_pam_utils \
               unit_scope \
               unit_introspect \
               unit_identities
@@ -50,6 +51,8 @@ unit_introspect_LDADD = $(unit_json_LDADD)
 
 unit_json_SOURCES = unit_json.c unit_test.c unit_test.h
 unit_json_LDADD = -ljson-c $(LDADD)
+
+unit_pam_utils_SOURCES = unit_pam_utils.c unit_test.c unit_test.h ../pam_utils.c
 
 unit_scope_SOURCES  = unit_scope.c unit_test.c unit_test.h
 unit_strings_SOURCES = unit_strings.c unit_test.c unit_test.h

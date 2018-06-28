@@ -23,6 +23,7 @@ pam_globus_la_SOURCES = acct_map.c \
                         introspect.c \
                         json.c \
                         pam.c \
+                        pam_utils.c \
                         scope.c \
                         strings.c \
 			acct_map.h \

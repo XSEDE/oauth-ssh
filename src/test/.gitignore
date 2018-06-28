@@ -10,6 +10,7 @@ unit_http
 unit_identities
 unit_introspect
 unit_json
+unit_pam_utils
 unit_scope
 unit_strings
 func_pam

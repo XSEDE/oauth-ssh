@@ -21,6 +21,7 @@
 #include "credentials.h"
 #include "introspect.h"
 #include "identities.h"
+#include "pam_utils.h"
 #include "acct_map.h"
 #include "strings.h"
 #include "config.h"
@@ -82,8 +83,6 @@ display_client_message(struct pam_conv * conv,
 
 char *
 build_acct_map_msg(const char * const accounts[]);
-
-static int get_array_len(void ** array);
 
 static int
 lookup_accounts(const char      *   idp_suffix,
@@ -399,16 +398,6 @@ build_acct_map_msg(const char * const accounts[])
 
 	free (account_list);
 	return acct_map_msg;
-}
-
-static int
-get_array_len(void ** array)
-{
-	int count = 0;
-
-	for (int i = 0; array && array[i]; i++);
-
-	return count;
 }
 
 static int
