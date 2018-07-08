@@ -4,7 +4,7 @@ dnl All Rights Reserved.
 dnl
 
 AC_PREREQ([2.69])
-AC_INIT([globus_ssh], [0.1.1], [support@globus.org])
+AC_INIT([globus_ssh], [0.1.2], [support@globus.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 
