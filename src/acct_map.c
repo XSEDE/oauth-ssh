@@ -61,7 +61,7 @@ add_account(char * account, char *** accounts)
 	if (!account) return;
 
 	int index = 0;
-	for (index = 0; *accounts && accounts[index]; index++)
+	for (index = 0; *accounts && (*accounts)[index]; index++)
 	{
 		if (strcmp(account, (*accounts)[index]) == 0)
 		{
