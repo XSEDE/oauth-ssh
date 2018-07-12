@@ -1,5 +1,18 @@
 #!/usr/bin/bash
 
+#sudo yum install git
+#sudo yum install gcc
+#sudo yum install autoconf automake
+#sudo yum install libcurl-devel
+#sudo yum install libssl-devel
+#sudo yum install openssl-devel
+#sudo yum install json-c-devel
+#sudo yum install pam-devel
+#sudo  yum install libtool
+#sudo yum install rpm-build
+#sudo yum install libtool-ltdl-devel
+
+
 autoreconf -i
 #CFLAGS="-Wall -O0 -ggdb3" PKG_CONFIG_PATH=/usr/local/cmocka-1.1.1/lib/pkgconfig/ ./configure
 ./configure

@@ -8,7 +8,7 @@
 Name:     globus-ssh
 Summary:  SSH with Globus Auth
 Version:  0.1.2
-Release:  1%{?dist}
+Release:  2%{?dist}
 License:  Proprietary
 Group:    Applications/Internet
 Source:   %{_name}-%{version}.tar.gz
@@ -112,8 +112,10 @@ rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 /usr/sbin/semodule -i %{_docdir}/%{name}-%{version}/globus-ssh.pp
 
 %postun
-/usr/sbin/userdel globus-mapping
-/usr/sbin/semodule -r globus-ssh
+if [ $1 -ne 1 ] ; then
+    /usr/sbin/userdel globus-mapping
+    /usr/sbin/semodule -r globus-ssh
+fi
 
 #
 # clean section
