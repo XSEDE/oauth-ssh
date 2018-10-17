@@ -1,5 +1,17 @@
 #!/usr/bin/bash
 
+sudo yum install -y git \
+                    gcc \
+                    autoconf \
+                    automake \
+                    libcurl-devel \
+                    openssl-devel \
+                    json-c-devel \
+                    pam-devel \
+                    libtool \
+                    rpm-build \
+                    libtool-ltdl-devel
+
 #sudo yum install git
 #sudo yum install gcc
 #sudo yum install autoconf automake
@@ -18,11 +30,11 @@ autoreconf -i
 ./configure
 make dist
 
-mkdir tmp/
-cd tmp
-
-mkdir BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
-cp ../globus_ssh-*.tar.gz SOURCES
-
-echo "%_topdir " `pwd` >> ~/.rpmmacros
-rpmbuild -v -bb --clean  ../packaging/fedora/globus-ssh.spec
+mkdir -p tmp/
+( cd tmp ; \
+  mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS; \
+  cp ../globus_ssh-*.tar.gz SOURCES; \
+  echo "%_topdir " `pwd` >> ~/.rpmmacros; \
+  #rpmbuild -v -bb --noclean  ../packaging/fedora/globus-ssh.spec; \
+  rpmbuild -v -bb --clean  ../packaging/fedora/globus-ssh.spec; \
+)

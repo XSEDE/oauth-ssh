@@ -1,5 +1,5 @@
 
-%global   _name globus_ssh
+%global   _name @PACKAGE_NAME@
 %global   soname 0
 
 #
@@ -7,20 +7,18 @@
 #
 Name:     globus-ssh
 Summary:  SSH with Globus Auth
-Version:  0.1.2
-Release:  2%{?dist}
+Version:  @PACKAGE_VERSION@
+Release:  1%{?dist}
 License:  Proprietary
 Group:    Applications/Internet
 Source:   %{_name}-%{version}.tar.gz
-URL:      https://globus.org/
-Vendor:   Globus Support
-Packager: Globus Support <support@globus.org>
+URL:      @PACKAGE_URL@
+Vendor:   Globus
+Packager: @PACKAGE_BUGREPORT@
 #%define   debug_package %{nil}
 
-# XXX why do we specify an alternate build root?
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-# XXX we need to figure out how to use cmocka during the build
 BuildRequires:  libcurl-devel
 BuildRequires:  openssl-devel
 BuildRequires:  json-c-devel
@@ -31,11 +29,13 @@ BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
 BuildRequires:  checkpolicy
 BuildRequires:  policycoreutils-python
+BuildRequires:  python-setuptools
 
 Requires:  libcurl
 Requires:  openssl
 Requires:  json-c
 Requires:  pam
+Requires:  python-click
 
 Requires(post): /usr/sbin/semodule, /usr/sbin/useradd, /usr/bin/getent
 Requires(postun): /usr/sbin/userdel, /usr/sbin/semodule
@@ -90,7 +90,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_globus.la
 rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 
-/usr/bin/checkmodule -M -m -o globus-ssh.mod globus-ssh.te
+/usr/bin/checkmodule -M -m -o globus-ssh.mod data/globus-ssh.te
 /usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.pp -m globus-ssh.mod
 
 #
@@ -100,6 +100,9 @@ rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
 %defattr(-,root,root,-)
 %{_docdir}/%{name}-%{version}/globus-ssh.pp
 %{_libdir}/security/pam_globus.*
+/usr/lib/*
+/usr/sbin/*
+/usr/share/*
 %config(noreplace) %{_sysconfdir}/globus/globus-acct-map
 %config(noreplace) %attr(0600,root,root) %{_sysconfdir}/globus/globus-ssh.conf
 
@@ -124,5 +127,8 @@ fi
 rm -rf $RPM_BUILD_ROOT
 
 #
-# changelog section XXX
+# changelog section
 #
+%changelog
+* Thu Oct 18 2018 Globus <support@globus.org> - @PACKAGE_VERSION@
+- Added globus-ssh-config for registering DNS with Globus Auth

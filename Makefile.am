@@ -2,12 +2,12 @@
 ## Copyright The University of Chicago
 ## All Rights Reserved.
 ##
-SUBDIRS = src
+SUBDIRS = src/pam src/config man/
 
 globusconfdir = $(sysconfdir)/globus
-globusconf_DATA = globus-ssh.conf globus-acct-map
+globusconf_DATA = data/globus-ssh.conf data/globus-acct-map
 
-doc_DATA = globus-ssh.te
+doc_DATA = data/globus-ssh.te
 
 EXTRA_DIST = $(globusconf_DATA) $(doc_DATA)
 
