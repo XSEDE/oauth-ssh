@@ -1,38 +1,34 @@
-#ifndef _AUTH_IDENTITIES_H_
-#define _AUTH_IDENTITIES_H_
+#ifndef _IDENTITIES_H_
+#define _IDENTITIES_H_
 
 /*
  * Local includes.
  */
-#include "credentials.h"
+#include "json.h"
 
-/************************************************
- *
- * /v2/api/identities
- *
- ***********************************************/
-typedef enum {ID_STATUS_UNUSED,
-              ID_STATUS_USED,
-              ID_STATUS_PRIVATE,
-              ID_STATUS_CLOSED} identity_status_t;
+struct identities {
+	struct included {
+		struct identity_provider {
+			char ** domains;
+			char *  id;
+			char ** alternative_names;
+			char *  short_name;
+			char *  name;
+		} ** identity_providers;
+	} included;
 
-struct identity {
-	char            * id;
-	char            * username;
-	identity_status_t status;
-	char            * identity_provider;
-	char            * email;
-	char            * name;
-	char            * organization;
+	struct identity {
+		char * username;
+		char * status;
+		char * name; // could be null
+		char * id;
+		char * identity_provider;
+		char * organization; // could be null
+		char * email; // could be null
+	} ** identities;
 };
 
-int
-get_identities(struct credentials *   credentials,
-               const char         **  ids_in,
-               struct identity    *** ids_out,
-               char               **  error_msg);
+struct identities * identities_init(json_t *);
+void identities_fini(struct identities *);
 
-void
-free_identities(struct identity **);
-
-#endif /* _AUTH_IDENTITIES_H_ */
+#endif /* _IDENTITIES_H_ */

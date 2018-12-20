@@ -2,36 +2,70 @@
 #define _JSON_H_
 
 /*
- * Rule of thumb for this submodule: If the function returns a
- * struct json_t *, you must json_free() it.
+ * System includes.
  */
+#include<stdbool.h>
+#include<json-c/json.h>
 
+/*
+ * json_t, jobj_t, jarr_t are equivalent and interchangeable. They each exist
+ * to provide context at the call site for readability. jobj_t should refer
+ * to values known to be type object. jarr_t should refer to values known to
+ * be type array. json_t is used when the type cannot be known (ex. for return
+ * values) or when a function applies to objects and arrays.
+ */
 typedef struct json_object json_t;
-
-json_t * json_init(const char * string, char ** errmsg);
-void json_free(json_t *);
-
-/*
- * These return 'value' from {'key' : value}
- */
-int          json_get_int(json_t *,    const char * key);
-int          json_get_bool(json_t *,   const char * key);
-const char * json_get_string(json_t *, const char * key);
-json_t *     json_get_object(json_t *, const char * key);
+typedef json_t jobj_t;
+typedef json_t jarr_t;
 
 /*
- * These return 'value' from {value}
+ * Primitives.
  */
-int          json_to_int(json_t *);
-int          json_to_bool(json_t *);
-const char * json_to_string(json_t *);
 
+// constructor. error_msg is optional.
+jobj_t * jobj_init(const char * jstring, char ** error_msg);
+// destructor. call this only on json_init() returned values.
+void     jobj_fini(jobj_t *);
 
-// Returns [1,2] from {"key" : [1,2]}. Use json_array_idx() on result
-json_t * json_get_array(json_t *, const char * key);
-int      json_array_len(json_t *);
-// Returns the object at the index, you must use json_to_*() to get the value.
-json_t * json_array_idx(json_t *, int index);
+// Call this on the key prior to any 'get' routines.
+bool jobj_key_exists(jobj_t *, const char * key);
 
+/*
+ * All returned values memory allocations are tied to the parent json_t
+ * returned from json_init(). Do not attempt to deallocate them individually.
+ * These values are undefined after the call to json_fini on the parent json_t.
+ */
+
+// returned values are undefined if the key does not exist
+json_type    jobj_get_type(jobj_t *,   const char * key);
+json_t *     jobj_get_value(jobj_t *,  const char * key);
+int          jobj_get_int(jobj_t *,    const char * key);
+bool         jobj_get_bool(jobj_t *,   const char * key);
+const char * jobj_get_string(jobj_t *, const char * key);
+
+// returned values are undefined if the index does not exist
+int          jarr_get_length(jarr_t *);
+json_type    jarr_get_type(jarr_t *,    int index);
+json_t *     jarr_get_index(jarr_t *,   int index);
+int          jarr_get_int(jarr_t *,     int index);
+bool         jarr_get_bool(jarr_t *,    int index);
+const char * jarr_get_string(jarr_t *,  int index);
+
+/*
+ * JSON validation.
+ */
+
+#define FIELD &(struct field)
+#define SUBFIELDS (struct field *[])
+
+struct field {
+	const char   *  key;
+	bool            required;
+	json_type       jtype;
+	struct field ** subfields;
+};
+
+bool
+is_json_object_valid(json_t * json_object, struct field ** fields);
 
 #endif /* _JSON_H_ */

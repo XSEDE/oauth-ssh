@@ -9,6 +9,7 @@
  * Local includes.
  */
 #include "strings.h"
+#include "debug.h" // always last
 
 char *
 join(const char * const strings[], const char delimiter)
@@ -32,64 +33,82 @@ join(const char * const strings[], const char delimiter)
 		strcpy(&joined_string[offset], strings[i]);
 		offset += strlen(strings[i]);
 	}
-
 	return joined_string;
 }
 
-char *
-concat(const char * string, const char * suffix)
-{
-	char * s = calloc(strlen(string) + strlen(suffix) + 1, sizeof(char));
-	sprintf(s, "%s%s", string, suffix);
-	return s;
-}
-
-char *
+void
 append(char ** string, const char * suffix)
 {
+	if (*string == NULL)
+	{
+		*string = strdup(suffix);
+		return;
+	}
+
 	*string = realloc(*string, strlen(*string)+strlen(suffix)+1);
 	strcat(*string, suffix);
-	return *string;
 }
 
-char **
-split(const char * string, char delimiter)
+void
+insert(char *** array, const char * string)
 {
-	char * string_copy = strdup(string);
-	char * string_tmp  = string_copy;
-	char * saveptr     = NULL;
-	char   delim[2]    = {delimiter, 0};
-
-	char ** strings    = NULL;
-	int     count      = 0;
-	char *  ptr        = NULL;
-	while ((ptr = strtok_r(string_tmp, delim, &saveptr)))
+	int cnt = 0;
+	for (cnt = 0; *array && (*array)[cnt]; cnt++)
 	{
-		string_tmp = NULL;
-		strings = realloc(strings, (count+2)*sizeof(char *));
-		strings[count++] = strdup(ptr);
-		strings[count]   = NULL;
+		if (strcmp((*array)[cnt], string) == 0)
+			return;
 	}
-	free(string_copy);
 
-	return strings;
+	*array = realloc(*array, (cnt+2)*sizeof(**array));
+	(*array)[cnt] = strdup(string);
+	(*array)[cnt+1] = NULL;
 }
 
-int
-string_in_list(const char * string, const char * const list[])
+char *
+sformat(const char * format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	int len = vsnprintf(NULL, 0, format, ap);
+	va_end(ap);
+
+	char * str = calloc(len+1, sizeof(char));
+
+	va_start(ap, format);
+	vsnprintf(str, len+1, format, ap);
+	va_end(ap);
+
+	return str;
+}
+
+bool
+key_in_list(const char * const list[], const char * key)
 {
 	for (int i = 0; list && list[i]; i++)
 	{
-		if (strcmp(string, list[i]) == 0)
-			return 1;
+		if (strcmp(list[i], key) == 0)
+			return true;
 	}
-
-	return 0;
+	return false;
 }
 
-char *
-safe_strdup(const char * s)
+bool
+string_has_suffix(const char * string, const char * suffix)
 {
-	if (!s) return NULL;
-	return strdup(s);
+	if (strlen(string) < strlen(suffix))
+		return false;
+
+	int offset = strlen(string) - strlen(suffix);
+	return (strcmp(string + offset, suffix) == 0);
+}
+
+void
+free_array(char ** array)
+{
+	for (int i = 0; array && array[i]; i++)
+	{
+		free(array[i]);
+	}
+	free(array);
 }

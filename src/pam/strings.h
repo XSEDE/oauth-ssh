@@ -1,24 +1,35 @@
 #ifndef _STRINGS_H_
 #define _STRINGS_H_
 
+/*
+ * System includes.
+ */
+#include <stdbool.h>
+#include <stdarg.h>
+
+#define CONST(type,var) (const type const *) var
+
 // delimiter is ignored when set to (int)0
 char *
 join(const char * const strings[], const char delimiter);
 
-char *
-concat(const char * string, const char * suffix);
-
 // realloc's 'string' to fit suffix in
-char *
+void
 append(char ** string, const char * suffix);
 
-char **
-split(const char * string, const char delimiter);
-
-int
-string_in_list(const char * string, const char * const list[]);
+void
+insert(char *** array, const char * string);
 
 char *
-safe_strdup(const char * s);
+sformat(const char * format, ...);
+
+bool
+key_in_list(const char * const * list, const char * key);
+
+bool
+string_has_suffix(const char * string, const char * suffix);
+
+void
+free_array(char ** array);
 
 #endif /* _STRINGS_H_ */

@@ -13,32 +13,31 @@ ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES    = pam_globus.la
 pam_globus_la_LDFLAGS = -module -shared
-pam_globus_la_SOURCES = acct_map.c \
-                        acct_map_module_file.c \
-                        acct_map_module_idp.c \
+pam_globus_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread
+pam_globus_la_SOURCES = account_map.c \
+                        account_map.h \
+                        base64.c \
+                        base64.h \
+                        client.c \
+                        client.h \
                         config.c \
-                        credentials.c \
+                        config.h \
+                        debug.c \
+                        debug.h \
+                        globus_auth.c \
+                        globus_auth.h \
                         http.c \
+                        http.h \
                         identities.c \
+                        identities.h \
                         introspect.c \
+                        introspect.h \
                         json.c \
+                        json.h \
+                        logger.c \
+                        logger.h \
                         pam.c \
-                        pam_utils.c \
-                        pam_utils.h \
-                        scope.c \
+                        parser.c \
+                        parser.h \
                         strings.c \
-			acct_map.h \
-			acct_map_module.h \
-			acct_map_module_file.h \
-			acct_map_module_idp.h \
-			auth.h \
-			config.h \
-			credentials.h \
-			http.h \
-			identities.h \
-			introspect.h \
-			json.h \
-			scope.h \
-			strings.h
-
-pam_globus_la_LIBADD = -lpam -ljson-c -lcurl
+                        strings.h

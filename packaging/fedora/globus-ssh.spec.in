@@ -130,5 +130,12 @@ rm -rf $RPM_BUILD_ROOT
 # changelog section
 #
 %changelog
-* Thu Oct 18 2018 Globus <support@globus.org> - @PACKAGE_VERSION@
+* Thu Oct 18 2018 Globus <support@globus.org> - 0.2
 - Added globus-ssh-config for registering DNS with Globus Auth
+
+* Wed Oct 17 2018 Globus <support@globus.org> - 0.3
+- Added Support for TXT-record FQDN validation
+
+* Wed Feb 27 2018 Globus <support@globus.org> - @PACKAGE_VERSION@
+- Added High Assurance Session support
+

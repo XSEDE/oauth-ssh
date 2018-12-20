@@ -4,36 +4,37 @@
 /*
  * System includes.
  */
-#include <time.h>
+#include <stdbool.h>
 
 /*
  * Local includes.
  */
-#include "credentials.h"
+#include "json.h"
 
 struct introspect {
-	int     active;
-	char ** scopes; // NULL terminated
-	char *  sub;    // Effective identity UUID
+	bool    active;
+	char *  scope;
+	char *  client_id;
+	char *  sub;
 	char *  username;
-	char *  display_name;
+	char ** aud;
+	char *  iss;
+	time_t  exp;
+	time_t  iat;
+	time_t  nbf;
 	char *  email;
-	char *  client_id;  // UUID of client token issued to
-	char ** audiences;  // NULL terminated
-	char *  issuer;     // https://auth.globus.org
-	time_t  expiry;     // Seconds since 1970 UTC when token expires
-	time_t  issued_at;  // Seconds since 1970 UTC when token was issued
-	time_t  not_before; // Seconds since 1970 UTC when token was issued
-	char ** identities; // NULL terminated
+	char ** identities_set;
+	struct session_info {
+		char * session_id;
+		struct authentication {
+			char * identity_id; // user's uuid
+			char * idp; // uuid of IdP
+			int    auth_time;
+		} ** authentications;
+	} * session_info;
 };
 
-int
-introspect(struct credentials *, 
-           const char         * token,
-           struct introspect  **,
-           char               ** error_msg);
-
-void
-free_introspect(struct introspect *);
+struct introspect * introspect_init(json_t *);
+void introspect_fini(struct introspect *);
 
 #endif /* _INTROSPECT_H_ */

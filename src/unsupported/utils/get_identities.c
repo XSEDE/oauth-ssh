@@ -146,10 +146,10 @@ load_config(const char * config_file, char ** client_id, char ** client_secret)
 	}
 
 	if (client_id)
-		config_get_value(config, "auth_client_id", client_id);
+		config_get_value(config, "client_id", client_id);
 
 	if (client_secret)
-		config_get_value(config, "auth_client_secret", client_secret);
+		config_get_value(config, "client_secret", client_secret);
 
 	config_free(config);
 

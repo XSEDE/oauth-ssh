@@ -10,22 +10,17 @@ The official, user-facing documents for installation and operation of SSH with G
 
 **Compiling**
 
-The latest dependencies and build targets can be found in `build_rpm` found in the top level of the repository.
+Makefile.bootstrap has two options of interest:
+  debug: build the repo using '-DDEBUG -Wall -ggdb3'
+  release: build the repo using '-O3' and generate an rpm
+
+Both options will use sudo to install prerequisites.
+
 
 **Testing**
 
-Globus SSH relies on the [cmocka](https://cmocka.org/) testing library. To install cmocka:
+Globus SSH relies on the [cmocka](https://cmocka.org/) testing library. CMOCKA is installed as part of the debug and release builds.
 
->sudo yum install -y wget cmake gcc  
->wget https://cmocka.org/files/1.1/cmocka-1.1.1.tar.xz  
->unxz cmocka-1.1.1.tar.xz  
->tar xf cmocka-1.1.1.tar  
->cd cmocka-1.1.1; mkdir build; cd build  
->cmake ..; make; sudo make install  
-
-Then reconfigure the SSH repository and point it to the cmake installation:
-
-> PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 
 **Code Submissions**
 1. Submit an issue with the [Globus SSH Repo](https://github.com/globusonline/ssh/issues).

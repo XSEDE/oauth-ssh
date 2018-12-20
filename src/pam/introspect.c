@@ -1,6 +1,7 @@
 /*
  * System includes.
  */
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,143 +10,217 @@
  */
 #include "introspect.h"
 #include "strings.h"
-#include "http.h"
-#include "auth.h"
+#include "logger.h"
 #include "json.h"
+#include "debug.h" // always last
 
-static struct introspect * json_to_introspect(json_t * json);
+typedef enum { success, failure } status_t;
 
-int
-introspect(struct credentials *  creds, 
-           const char         *  token,
-           struct introspect  ** introspect,
-           char               ** error_msg)
+static status_t
+check_key(jobj_t * jobj, const char * key, json_type jtype)
 {
-	const char * list[]  = {"token=", token, "&include=identities_set", NULL};
-	char * request = join(list, 0);
-	char * reply   = NULL;
+	if (!jobj_key_exists(jobj, key))
+	{
+		logger(LOG_TYPE_ERROR,
+		       "Introspect record is missing required key '%s'", key);
+		return failure;
+	}
 
-	int retval = http_post_request(creds,
-	                               GLOBUS_AUTH_URL "/v2/oauth2/token/introspect",
-	                               request,
-	                               &reply,
-	                               error_msg);
-
-	if (retval)
-		goto cleanup;
-
-	json_t * json = json_init(reply, error_msg);
-	if (!json)
-		goto cleanup;
-
-	*introspect = json_to_introspect(json);
-
-cleanup:
-	if (json)
-		json_free(json);
-	if (request)
-		free(request);
-	if (reply)
-		free(reply);
-	return retval || !json;
+	if (jobj_get_type(jobj, key) != jtype)
+	{
+		logger(LOG_TYPE_ERROR,
+		       "Introspect record has wrong type for required key '%s'", key);
+		return failure;
+	}
+	return success;
 }
+
+typedef status_t (*func_t)(jobj_t * jobj, void * value);
+
+#define GET_CONTAINER(j, i, key, type) \
+     get_value(j, #key, json_type_##type, &i->key, get_##key)
+
+#define GET_VALUE(j, i, key, type) \
+     get_value(j, #key, json_type_##type, &i->key, NULL)
+
+static status_t
+get_value(jobj_t     * jobj,
+          const char * key,
+          json_type    jtype,
+          void       * value,
+          func_t       func)
+{
+	if (check_key(jobj, key, jtype) == failure)
+		return failure;
+	const char * tmp;
+
+	switch (jtype)
+	{
+	case json_type_int:
+		*(int *)value = jobj_get_int(jobj, key);
+		break;
+	case json_type_string:
+		tmp = jobj_get_string(jobj, key);
+		if (tmp) *(char **)value = strdup(tmp);
+		break;
+	case json_type_boolean:
+		*(bool *)value = jobj_get_bool(jobj, key);
+		break;
+
+	case json_type_array:
+	case json_type_object:
+		return func(jobj_get_value(jobj, key), value);
+
+	case json_type_double:
+	case json_type_null:
+		ASSERT(0);
+		return failure;
+	}
+	return success;
+}
+
+status_t
+get_aud(jarr_t * jarr, void * value)
+{
+	char ** ptr = calloc(jarr_get_length(jarr)+1, sizeof(char*));
+	*((char ***)value) = ptr;
+
+	for (int k = 0; k < jarr_get_length(jarr); k++)
+	{
+		if (jarr_get_type(jarr, k) != json_type_string)
+		{
+			logger(LOG_TYPE_ERROR, "Introspect field 'aud' is malformed");
+			return failure;
+		}
+		ptr[k] = strdup(jarr_get_string(jarr, k));
+	}
+	return success;
+}
+
+status_t
+get_identities_set(jarr_t * jarr, void * value)
+{
+	char ** ptr = calloc(jarr_get_length(jarr)+1, sizeof(char*));
+	*((char ***)value) = ptr;
+
+	for (int k = 0; k < jarr_get_length(jarr); k++)
+	{
+		if (jarr_get_type(jarr, k) != json_type_string)
+		{
+			logger(LOG_TYPE_ERROR,
+			       "Introspect field 'identities_set' is malformed");
+			return failure;
+		}
+		ptr[k] = strdup(jarr_get_string(jarr, k));
+	}
+	return success;
+}
+
+status_t
+get_authentications(jobj_t * jobj, void * value)
+{
+	struct authentication ** a = NULL;
+
+	int cnt = 0;
+	json_object_object_foreach(jobj, k, v)
+	{
+		a = realloc(a, sizeof(*a) * (cnt+2));
+		a[cnt] = calloc(1, sizeof(**a));
+
+		a[cnt]->identity_id = strdup(k);
+		if (GET_VALUE(v, a[cnt], idp,       string) == failure ||
+		    GET_VALUE(v, a[cnt], auth_time, int)    == failure)
+		{
+			return failure;
+		}
+
+		a[++cnt] = NULL;
+	}
+	*(struct authentication ***)value = a;
+	return success;
+}
+
+status_t
+get_session_info(jobj_t * jobj, void * value)
+{
+	struct session_info * s = calloc(1, sizeof(*s));
+	*(struct session_info **) value = s;
+
+	if (GET_VALUE(jobj, s, session_id, string) == failure)
+		return failure;
+
+	return GET_CONTAINER(jobj, s, authentications, object);
+}
+
+struct introspect *
+introspect_init(jobj_t * jobj)
+{
+	struct introspect * i = calloc(1, sizeof(struct introspect));
+	status_t status;
+
+	if ((status = GET_VALUE(jobj, i, active, boolean)) == failure)
+		goto cleanup;
+
+	if (i->active == false)
+		goto cleanup;
+
+	if ((status = GET_VALUE(jobj, i, scope,     string)) == failure ||
+	    (status = GET_VALUE(jobj, i, client_id, string)) == failure ||
+	    (status = GET_VALUE(jobj, i, sub,       string)) == failure ||
+	    (status = GET_VALUE(jobj, i, username,  string)) == failure ||
+	    (status = GET_VALUE(jobj, i, iss,       string)) == failure ||
+	    (status = GET_VALUE(jobj, i, email,     string)) == failure ||
+	    (status = GET_VALUE(jobj, i, exp,       int))    == failure ||
+	    (status = GET_VALUE(jobj, i, iat,       int))    == failure ||
+	    (status = GET_VALUE(jobj, i, nbf,       int))    == failure)
+	{
+		goto cleanup;
+	}
+
+	if ((status = GET_CONTAINER(jobj, i, aud,            array))  == failure ||
+	    (status = GET_CONTAINER(jobj, i, identities_set, array))  == failure ||
+	    (status = GET_CONTAINER(jobj, i, session_info,   object)) == failure)
+	{
+		goto cleanup;
+	}
+cleanup:
+	if (status == success)
+		return i;
+
+	introspect_fini(i);
+	return NULL;
+};
 
 void
-free_introspect(struct introspect * i)
+introspect_fini(struct introspect * i)
 {
-	if (i->scopes)
+	if (i)
 	{
-		for (int j = 0; i->scopes[j]; j++) free(i->scopes[j]);
-		free(i->scopes);
-	}
-
-	if (i->sub)
+		free(i->scope);
+		free(i->client_id);
 		free(i->sub);
-
-	if (i->username)
 		free(i->username);
-
-	if (i->display_name)
-		free(i->display_name);
-
-	if (i->email)
+		free(i->iss);
 		free(i->email);
 
-	if (i->client_id)
-		free(i->client_id);
+		free_array(i->aud);
+		free_array(i->identities_set);
 
-	if (i->audiences)
-	{
-		for (int j = 0; i->audiences[j]; j++) free(i->audiences[j]);
-		free(i->audiences);
+		if (i->session_info)
+		{
+			free(i->session_info->session_id);
+
+			typeof(i->session_info->authentications) authentications;
+			authentications = i->session_info->authentications;
+			for (int j = 0; authentications && authentications[j]; j++)
+			{
+				free(authentications[j]->identity_id);
+				free(authentications[j]->idp);
+				free(authentications[j]);
+			}
+			free(i->session_info->authentications);
+		}
+		free(i->session_info);
 	}
-
-	if (i->issuer)
-		free(i->issuer);
-
-	if (i->identities)
-	{
-		for (int j = 0; i->identities[j]; j++) free(i->identities[j]);
-		free(i->identities);
-	}
-
 	free(i);
-}
-
-char **
-copy_out_string_list(json_t * json, char * key)
-{
-	const char * string = json_get_string(json, key);
-	if (!string)
-		return NULL;
-	return split(string, ' ');
-}
-
-char **
-copy_out_array(json_t * json, char * key)
-{
-	json_t * j_arr = json_get_array(json, key);
-	if (!j_arr)
-		return NULL;
-
-	if (json_array_len(j_arr) == 0)
-		return NULL;
-
-	char ** array = calloc((json_array_len(j_arr) + 1), sizeof(char *));
-
-	for (int i = 0; i < json_array_len(j_arr); i++)
-	{
-		json_t * j_idx = json_array_idx(j_arr, i);
-		array[i] = strdup(json_to_string(j_idx));
-		json_free(j_idx);
-	}
-	json_free(j_arr);
-	return array;
-}
-
-/* XXX we need to make sure the reply is not an error message.
- */
-
-// https://docs.globus.org/api/auth/reference/#token_introspection_post_v2_oauth2_token_introspect
-// XXX the web page is not clear on 'scopes' and 'aud', describing them as 'lists' however the
-// example record are strings.
-static struct introspect *
-json_to_introspect(json_t * json)
-{
-	struct introspect * i = calloc(sizeof(struct introspect), 1);
-	i->active       = json_get_bool(json, "active");
-	i->scopes       = copy_out_string_list(json, "scope");
-	i->sub          = safe_strdup(json_get_string(json, "sub"));
-	i->username     = safe_strdup(json_get_string(json, "username"));
-	i->display_name = safe_strdup(json_get_string(json, "name"));
-	i->email        = safe_strdup(json_get_string(json, "email"));
-	i->client_id    = safe_strdup(json_get_string(json, "client_id"));
-	i->audiences    = copy_out_string_list(json, "aud");
-	i->issuer       = safe_strdup(json_get_string(json, "iss"));
-	i->expiry       = json_get_int(json, "exp");
-	i->issued_at    = json_get_int(json, "iat");
-	i->not_before   = json_get_int(json, "nbf");
-	i->identities   = copy_out_array(json, "identities_set");
-
-	return i;
 }

@@ -1,0 +1,59 @@
+PKGS_PRE:= epel-release
+PKGS:= git \
+       gcc \
+       autoconf \
+       automake \
+       cmake3 \
+       libcurl-devel \
+       openssl-devel \
+       json-c-devel \
+       pam-devel \
+       libtool \
+       rpm-build \
+       libtool-ltdl-devel
+
+MISSING_PKGS_PRE:=$(shell \
+	for p in ${PKGS_PRE}; do \
+		rpm -q $$p > /dev/null || echo $$p; \
+	done)
+
+MISSING_PKGS:=$(shell \
+	for p in ${PKGS}; do \
+		rpm -q $$p > /dev/null || echo $$p; \
+	done)
+
+CMOCKA_VER:= 1.1.3
+CMOCKA_SRC:= cmocka-$(CMOCKA_VER)
+CMOCKA_TAR:= $(CMOCKA_SRC).tar.xz
+CMOCKA_URL:= https://cmocka.org/files/1.1/$(CMOCKA_TAR)
+CMOCKA_PRE:= $(shell pwd)/cmocka
+
+CMOCKA_BUILD:=(mkdir $(CMOCKA_SRC)/build;  \
+    cd $(CMOCKA_SRC)/build; \
+    cmake3 -DCMAKE_INSTALL_PREFIX=$(CMOCKA_PRE) -DCMAKE_BUILD_TYPE=Debug ..; \
+    make; \
+    make install)
+
+CONFIGURE:=PKG_CONFIG_PATH=$(CMOCKA_PRE)/lib64/pkgconfig/ ./configure
+
+common:
+	[ -z "$(MISSING_PKGS_PRE)" ] || sudo yum install -y $(MISSING_PKGS_PRE)
+	[ -z "$(MISSING_PKGS)" ] || sudo yum install -y $(MISSING_PKGS)
+	[ -f $(CMOCKA_TAR) ] || curl -o $(CMOCKA_TAR) $(CMOCKA_URL)
+	[ -d $(CMOCKA_SRC) ] || tar xf $(CMOCKA_TAR)
+	[ -d $(CMOCKA_PRE) ] || $(CMOCKA_BUILD)
+	[ -f configure ] || autoreconf -i
+	[ -f Makefile ] || CFLAGS=$(CFLAGS) $(CONFIGURE)
+	make
+	#LD_LIBRARY_PATH=$(CMOCKA_PRE)/lib64:$(PWD)/src/pam/.libs make check
+
+debug: CFLAGS='-DDEBUG -Wall -ggdb3'
+debug: common
+
+release: CFLAGS='-O3'
+release: common
+	make dist
+	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
+	cp globus_ssh-*.tar.gz SOURCES
+	echo "%_topdir " `pwd` >> ~/.rpmmacros
+	rpmbuild -v -bb --clean  packaging/fedora/globus-ssh.spec

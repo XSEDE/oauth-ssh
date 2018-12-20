@@ -1,26 +1,29 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-struct config;
-
-struct config * config_init();
-
-void
-config_free(struct config * config);
-
 /*
- * Returns:
- *   -<errno> on system error
- *    0 on success
+ * System includes.
  */
-int
-config_load(struct config * config,
-            const char    * path);
+#include <stdbool.h>
 
-// value is null if or key does not exist or value is null
-void
-config_get_value(struct config *  config,
-                 const char    *  key,
-                 char          ** value);
+#define CONFIG_DEFAULT_FILE "/etc/globus/globus-ssh.conf"
+
+struct config {
+	char *  client_id;
+	char *  client_secret;
+	char *  idp_suffix;
+	char ** map_file;
+
+	// Session support
+	char ** permitted_idps;
+	int     authentication_timeout;
+
+	// 'Hidden' options set in PAM config file
+	char *  environment; // default 'production'
+	bool    debug;
+};
+
+struct config * config_init(int flags, int argc, const char ** argv);
+void config_fini(struct config *);
 
 #endif /* _CONFIG_H_ */

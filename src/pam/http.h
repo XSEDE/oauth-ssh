@@ -4,19 +4,17 @@
 /*
  * Local includes.
  */
-#include "credentials.h"
+#include "config.h"
 
 int
-http_get_request(struct credentials *  credentials,
-                 const char         *  request_url,
-                 char               ** reply_body,
-                 char               ** error_msg);
+http_post_request(const struct config * config,
+                  const char * request_url,
+                  const char * request_body,
+                  char ** reply_body);
 
 int
-http_post_request(struct credentials *  credentials,
-                  const char         *  request_url, 
-                  const char         *  request_body,
-                  char               ** reply_body,
-                  char               ** error_msg);
+http_get_request(const struct config * config,
+                 const char * request_url,
+                 char ** reply_body);
 
 #endif /* _HTTP_H_ */

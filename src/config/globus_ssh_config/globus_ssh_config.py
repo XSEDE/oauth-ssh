@@ -15,16 +15,16 @@ GLOBUS_AUTH_ENVS = {'preview':     'https://auth.preview.globus.org/v2',
                     'production':  'https://auth.globus.org/v2'}
 
 GLOBUS_AUTH_ENDPOINT = GLOBUS_AUTH_ENVS['production']
-GLOBUS_SDK_ENVIRONMENT = os.environ.get('GLOBUS_SDK_ENVIRONMENT')
-if GLOBUS_SDK_ENVIRONMENT in GLOBUS_AUTH_ENVS:
-    GLOBUS_AUTH_ENDPOINT = GLOBUS_AUTH_ENVS[GLOBUS_SDK_ENVIRONMENT]
+GLOBUS_SSH_ENVIRONMENT = os.environ.get('GLOBUS_SSH_ENVIRONMENT')
+if GLOBUS_SSH_ENVIRONMENT in GLOBUS_AUTH_ENVS:
+    GLOBUS_AUTH_ENDPOINT = GLOBUS_AUTH_ENVS[GLOBUS_SSH_ENVIRONMENT]
 
 SSH_SCOPE_SUFFIX = "ssh"
 SSH_SCOPE_FORMAT = "https://auth.globus.org/scopes/%s/" + SSH_SCOPE_SUFFIX
 
 CONFIG_FILE = '/etc/globus/globus-ssh.conf'
-CONFIG_KEY_ID = 'auth_client_id'
-CONFIG_KEY_SECRET = 'auth_client_secret'
+CONFIG_KEY_ID = 'client_id'
+CONFIG_KEY_SECRET = 'client_secret'
 
 
 def get_config_value(file, key):
@@ -64,7 +64,7 @@ MISSING_OPT_ERR_MSG = (
 
 def entry_point(ctx, client_id, client_secret):
     """This script allows you to register a fully qualified domain name (FQDN)
-       with your SSH for Globus Auth service so that users of the globus-ssh
+       for your SSH with Globus Auth service so that users of the globus-ssh
        client can access it as 'globus-ssh <FQDN>'.
     """
     ctx.obj = {}
@@ -104,6 +104,7 @@ def register(ctx, fqdn):
     client_id = ctx.obj[CTX_CLIENT_ID]
     client_secret = ctx.obj[CTX_CLIENT_SECRET]
 
+    # Request all clients owned by the client_id, secret
     clients_url = GLOBUS_AUTH_ENDPOINT + '/api/clients'
     r = requests.get(clients_url, auth=(client_id, client_secret))
 
@@ -111,10 +112,14 @@ def register(ctx, fqdn):
         print_friendly_auth_err_msg(r)
         sys.exit(1)
 
+    # Remove the 'clients' envelope
     clients = r.json()['clients']
+    # Find the entry with our client id
     clients = filter(lambda x: x['id'] == ctx.obj[CTX_CLIENT_ID], clients)
+    # Fine the entry with our FQDN
     clients = filter(lambda x: fqdn in x['fqdns'], clients)
 
+    # If it doesn't exist, register our FQDN
     if len(clients) == 0:
         url = GLOBUS_AUTH_ENDPOINT + '/api/clients/' + client_id + '/fqdns'
         r = requests.post(url,
@@ -125,6 +130,7 @@ def register(ctx, fqdn):
             print_friendly_auth_err_msg(r)
             sys.exit(1)
 
+    # Get the scopes for this service
     r = requests.get(GLOBUS_AUTH_ENDPOINT + '/api/scopes',
                      auth=(ctx.obj[CTX_CLIENT_ID], ctx.obj[CTX_CLIENT_SECRET]))
 
@@ -132,21 +138,46 @@ def register(ctx, fqdn):
         print_friendly_auth_err_msg(r)
         sys.exit(1)
 
-    scopes = r.json()['scopes']
-    scopes = filter(lambda x: x['client'] == ctx.obj[CTX_CLIENT_ID], scopes)
+    # Remove the 'scopes' envelope
+    all_scopes = r.json()['scopes']
+    # Find the entry with our client_id
+    scopes = filter(lambda x: x['client'] == ctx.obj[CTX_CLIENT_ID], all_scopes)
     scope_string = (SSH_SCOPE_FORMAT % ctx.obj[CTX_CLIENT_ID])
+    # Find the entry with our scope
     scopes = filter(lambda x: x['scope_string'] == scope_string, scopes)
 
+    # If the scope doesn't exist, create it
     if len(scopes) == 0:
         url = GLOBUS_AUTH_ENDPOINT + '/api/clients/' + client_id + '/scopes'
-        body = {'scope': {'name': 'SSH',
-                          'description': 'Allow SSH access to host',
+        body = {'scope': {'name': 'SSH into ' + fqdn,
+                          'description': 'Allow SSH access to ' + fqdn,
                           'scope_suffix': SSH_SCOPE_SUFFIX}}
         r = requests.post(url, auth=(client_id, client_secret), json=body)
 
         if r.status_code != requests.codes.ok:
             print_friendly_auth_err_msg(r)
             sys.exit(1)
+
+    # Fixup the scope name and description on older scopes
+    for scope in all_scopes:
+        fields = scope['scope_string'].split('/')
+        # Skip unrecognized formats
+        if len(fields) != 6: continue
+        # Skip the scope not associated with a FQDN
+        if fields[4] == scope['client']: continue
+
+        name_is_wrong = scope['name'] != 'SSH into {0}'.format(fields[4])
+        desc_is_wrong = scope['description'] != 'Allow SSH access to '+fields[4]
+
+        if name_is_wrong or desc_is_wrong:
+            url = GLOBUS_AUTH_ENDPOINT + '/api/scopes/' + scope['id']
+            body = {'scope': {'name': 'SSH into ' + fqdn,
+                              'description': 'Allow SSH access to ' + fqdn}}
+            r = requests.put(url, auth=(client_id, client_secret), json=body)
+
+            if r.status_code != requests.codes.ok:
+                print_friendly_auth_err_msg(r)
+                sys.exit(1)
 
     click.echo("Success")
 

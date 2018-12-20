@@ -1,340 +1,114 @@
 /*
- * Copyright The University of Chicago
- * All Rights Reserved.
- */
-
-/*
  * System includes.
  */
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <syslog.h>
 #define PAM_SM_AUTH
 #include <security/pam_modules.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <time.h>
+#include <pwd.h>
 
 /*
  * Local includes.
  */
-#include "acct_map_module_file.h"
-#include "acct_map_module_idp.h"
-#include "credentials.h"
-#include "introspect.h"
+#include "account_map.h"
+#include "globus_auth.h"
 #include "identities.h"
-#include "pam_utils.h"
-#include "acct_map.h"
+#include "introspect.h"
 #include "strings.h"
+#include "client.h"
 #include "config.h"
-#include "scope.h"
+#include "logger.h"
+#include "base64.h"
+#include "debug.h" // always last
 
-static const char * AccessTokenPrompt = "Enter your Globus Auth token: ";
-static const char * NoLocalAcctMsg        = "You have no local accounts";
-static const char * LocalAcctMsgPrefix    = "You can log in as";
-static const char * DefaultConfigFile     = "/etc/globus/globus-ssh.conf";
-static const char * ConfigOptClientID     = "auth_client_id";
-static const char * ConfigOptClientSecret = "auth_client_secret";
-static const char * ConfigOptIdpSuffix    = "idp_suffix";
-static const char * ConfigOptMapFile      = "map_file";
-static const char * ScopeSuffix           = "ssh";
+typedef int pam_status_t;
 
-
-/*
- * Notes about the "SSH for Globus Auth" PAM module design
- *
- * This PAM module receives the client's access token via the password
- * prompt. There are two ways to do this with SSH, each with caveats. These
- * options are controlled within sshd_config. Either option requires "UsePAM yes".
- *
- * PasswordAuthentication Yes
- *    When enabled, the user will be prompted for the access token *before*
- *    the PAM module is called. SSH will enforce internal, valid account 
- *    checks before calling PAM. When we use the conversation function with
- *    PAM_PROMPT_ECHO_OFF, the password is given to us. This presents the 
- *    following issues:
- *       A) We do not get an opportunity to change the password prompt language
- *       B) Any response we send with PAM_TEXT_INFO (aka mapped accounts), is
- *          queued and display only after *successful* login
- *
- * ChallengeResponseAuthentication Yes
- *    When enabled, the SSH service allows the PAM module to perform the
- *    entirety of the conversation. We can change the password prompt and 
- *    our PAM_TEXT_INFO messages are displayed inline. However, there are
- *    a couple issues:
- *       A) SSHD will not perform account validation
- *       B) SSHD will not perform zero-length password checks
- *       C) SSHD will not perform root-login checks
- *       D) It is possible that some sites may already use this option for
- *          another authentication mechanism (Two Factor)
- */
-
-/*
- * This PAM module must be 'required' or 'requisite' (unverified). 'sufficient' causes
- * globus-mapping to retry.
- */
-
-int
-get_client_access_token(struct pam_conv *  conv,
-                        const char      *  prompt,
-                        char            ** access_token);
-
-int
-display_client_message(struct pam_conv * conv,
-                       const char      * message);
-
-char *
-build_acct_map_msg(const char * const accounts[]);
-
-static int
-lookup_accounts(const char      *   idp_suffix,
-                const char      *   map_file,
-                struct identity *   identities[],
-                char            *** accounts);
-
-static void
-debug(const char * format, ...)
+static bool
+_acct_is_valid(const char * acct)
 {
-	static int initialized = 0;
-	if (!(initialized++))
-		openlog(NULL, 0, LOG_AUTHPRIV);
-
-	va_list ap;
-	va_start(ap, format);
-	vsyslog(LOG_DEBUG, format, ap);
-	va_end(ap);
+	return (getpwnam(acct) != NULL);
 }
 
-int
-pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv)
+static char **
+_build_account_array(const struct account_map * account_map)
 {
-	char * access_token      = NULL;
-	char * client_id         = NULL;
-	char * client_secret     = NULL;
-	char * idp_suffix        = NULL;
-	char * map_file          = NULL;
-	char * error_msg         = NULL;
-	struct identity **  identities = NULL;
-	struct introspect * introspect_record = NULL;
+	char ** account_array = NULL;
 
-	int pam_err = PAM_SUCCESS;
-
-	/*
-	 * Default config options.
-	 */
-	const char * config_file = DefaultConfigFile;
-
-	/*
-	 * Parse provided options.
-	 */
-	if (argc >= 1) config_file = argv[0];
-
-	/*
-	 * Load our config
-	 */
-	struct config * config = config_init();
-
-	int retval = config_load(config, config_file);
-	if (retval < 0)
+	for (const struct account_map * tmp = account_map; tmp; tmp = tmp->next)
 	{
-		debug("COULD NOT READ %s: %s", config_file, strerror(-retval));
-		pam_err  = PAM_AUTHINFO_UNAVAIL;
-		goto cleanup;
-	}
-
-	if (retval > 0)
-	{
-		debug("COULD NOT PARSE %s LINE %d", config_file, retval);
-		pam_err  = PAM_AUTHINFO_UNAVAIL;
-		goto cleanup;
-	}
-
-	config_get_value(config, ConfigOptClientID, &client_id);
-	if (!client_id)
-	{
-		debug("%s IS MISSING FROM %s", ConfigOptClientID, config_file);
-		pam_err  = PAM_AUTHINFO_UNAVAIL;
-		goto cleanup;
-	}
-
-	config_get_value(config, ConfigOptClientSecret, &client_secret);
-	if (!client_secret)
-	{
-		debug("%s IS MISSING FROM %s", ConfigOptClientSecret, config_file);
-		pam_err  = PAM_AUTHINFO_UNAVAIL;
-		goto cleanup;
-	}
-
-	struct credentials creds = init_client_creds(client_id, client_secret);
-
-	config_get_value(config, ConfigOptIdpSuffix, &idp_suffix);
-	config_get_value(config, ConfigOptMapFile, &map_file);
-
-	if (!idp_suffix && !map_file)
-	{
-		debug("BOTH %s and %s ARE MISSING FROM %s", ConfigOptIdpSuffix,
-		                                             ConfigOptMapFile,
-		                                             config_file);
-		pam_err  = PAM_AUTHINFO_UNAVAIL;
-		goto cleanup;
-	}
-
-	struct pam_conv * conv = NULL;
-	pam_err = pam_get_item(pamh, PAM_CONV, (const void **)&conv);
-	if (pam_err != PAM_SUCCESS)
-	{
-		pam_err = PAM_AUTH_ERR;
-		return pam_err;
-	}
-
-	/*
-	 * Ask the user for their access token
-	 */
-	pam_err = get_client_access_token(conv, AccessTokenPrompt, &access_token);
-	if (pam_err != PAM_SUCCESS)
-		goto cleanup;
-
-	/*
-	 * Introspect the token 
-	 */
-	retval = introspect(&creds, access_token, &introspect_record, &error_msg);
-	if (retval)
-	{
-		debug(error_msg);
-		pam_err = PAM_AUTH_ERR;
-		goto cleanup;
-	}
-
-	/*
-	 * Check the validity of the token
-	 */
-	if (!introspect_record->active)
-	{
-		debug("token is not active");
-		pam_err = PAM_AUTH_ERR;
-		goto cleanup;
-	}
-
-	/*
-	 * Check for the appropriate scope(s)
-	 */
-	int found = has_scope(ScopeSuffix, (char **)introspect_record->scopes, &error_msg);
-	if (error_msg || !found)
-	{
-		switch (error_msg == NULL)
+		for (int i = 0; tmp->accounts && tmp->accounts[i]; i++)
 		{
-		case 0:
-			debug("error while searching for the proper scope: %s", error_msg);
-			free(error_msg);
-			break;
-		case 1:
-			debug("token does not have proper scope");
-			break;
+			if (!key_in_list(CONST(char *, account_array), tmp->accounts[i]))
+			{
+				if (_acct_is_valid(tmp->accounts[i]))
+					insert(&account_array, tmp->accounts[i]);
+			}
 		}
-
-		pam_err = PAM_AUTH_ERR;
-		goto cleanup;
 	}
-
-	/*
-	 * Map remote identities to local accounts
-	 */
-	retval = get_identities(&creds,
-	                      (const char **)introspect_record->identities,
-                           &identities,
-                           &error_msg);
-
-	if (retval)
-	{
-		debug(error_msg);
-		pam_err = PAM_AUTH_ERR;
-		goto cleanup;
-	}
-
-	char ** local_accts;
-	pam_err = lookup_accounts(idp_suffix, map_file, identities, &local_accts);
-	if (pam_err != PAM_SUCCESS)
-			goto cleanup;
-
-	/*
-	 * Get the requested local account
-	 */
-	const char * requested_account = NULL;
-	pam_err = pam_get_user(pamh, &requested_account, NULL);
-	if (pam_err != PAM_SUCCESS)
-		goto cleanup;
-
-	/*
-	 * If requested local account is 'globus-mapping', print mapped accounts
-	 * and exit
-	 */
-	if (strcmp(requested_account, "globus-mapping") == 0)
-	{
-		const char * const * tmp = (const char * const *) local_accts;
-		char * acct_map_msg = build_acct_map_msg(tmp);
-
-		pam_err = display_client_message(conv, acct_map_msg);
-		free(acct_map_msg);
-
-		if (pam_err == PAM_SUCCESS)
-			pam_err = PAM_MAXTRIES;
-		goto cleanup;
-	}
-
-	/*
-	 * If requested local account is in mapped accounts, success.
-	 * Regardless of what we return there, if the account is not real,
-	 * SSHD is going to retry us so that an attacker can not guess account
-	 * names.
-	 */
-	if (!string_in_list(requested_account, (const char * const *)local_accts))
-		pam_err = PAM_USER_UNKNOWN;
-
-cleanup:
-	if (config)
-		config_free(config);
-	if (access_token)
-		free((void *)access_token);
-	if (client_id)
-		free(client_id);
-	if (client_secret)
-		free(client_secret);
-	if (idp_suffix)
-		free(idp_suffix);
-	if (map_file)
-		free(map_file);
-	if (introspect_record)
-		free_introspect(introspect_record);
-	if (identities)
-		free_identities(identities);
-
-	return pam_err;
+	return account_array;
 }
 
-int
-pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv)
+static char *
+_build_json_list(const char * const * array)
 {
-	if (flags & PAM_SILENT) {}
-	if (flags & PAM_ESTABLISH_CRED) {}
-	if (flags & PAM_DELETE_CRED) {}
-	if (flags & PAM_REINITIALIZE_CRED) {}
-	if (flags & PAM_REFRESH_CRED) {}
-	return PAM_SUCCESS;
+	char * jlist = NULL;
+	for (int i = 0; array && array[i]; i++)
+	{
+		if (jlist)
+			append(&jlist, ", ");
+		append(&jlist, "\"");
+		append(&jlist, array[i]);
+		append(&jlist, "\"");
+	}
+	return jlist;
 }
 
-/*
- * Send a single message, echo disabled, display the given prompt,
- * return a copy of the access token.
- */
-int
-get_client_access_token(struct pam_conv *  conv,
-                        const char      *  prompt,
-                        char            ** access_token)
+static char *
+_build_error_reply(const char * code, const char * description)
 {
+	return sformat(
+				"{"
+					"\"error\": {"
+						"\"code\": \"%s\","
+						"\"description\": \"%s\""
+					"}"
+				"}", code, description);
+}
+
+static struct pam_conv *
+_get_pam_conv(pam_handle_t * pam)
+{
+	struct pam_conv * conv = NULL;
+	int pam_err = pam_get_item(pam, PAM_CONV, (const void **)&conv);
+	if (pam_err != PAM_SUCCESS)
+	{
+		logger(LOG_TYPE_ERROR,
+		       "Failed to retrieve PAM conversation function: %s", 
+		       pam_strerror(pam, pam_err));
+ 		return NULL;
+	}
+	return conv;
+}
+
+static char *
+_read_user_request(pam_handle_t * pam)
+{
+	const char * prompt = "Enter your Globus Auth token: ";
+
 	int pam_err = PAM_SUCCESS;
 	struct pam_message msg;
 	const struct pam_message * msgp;
 	struct pam_response      * resp;
 
-	*access_token = NULL;
+	struct pam_conv * conv = _get_pam_conv(pam);
+	if (!conv) return NULL;
 
 	/*
 	 * We need to ask for the user's password. If this is SSH with password
@@ -349,95 +123,509 @@ get_client_access_token(struct pam_conv *  conv,
 	resp          = NULL;
 	pam_err       = (*conv->conv)(1, &msgp, &resp, conv->appdata_ptr);
 
-	if (pam_err == PAM_SUCCESS)
+	if (pam_err != PAM_SUCCESS || !resp || !resp->resp)
 	{
-		*access_token = resp->resp;
-		free(resp);
+		logger(LOG_TYPE_ERROR,
+		       "Failed to read user input: %s",
+		       pam_strerror(pam, pam_err));
+		return NULL;
 	}
 
-	return pam_err;
+	char * token = resp->resp;
+	free(resp);
+	return token;
+}
+
+static void
+_send_our_reply(pam_handle_t * pam, const char * reply)
+{
+	if (reply)
+	{
+		struct pam_conv * conv = _get_pam_conv(pam);
+		if (!conv) return;
+
+		struct pam_message msg;
+		msg.msg_style = PAM_TEXT_INFO;
+		msg.msg       = reply;
+		const struct pam_message * msgp = &msg;
+		struct pam_response      * resp = NULL;
+		int pam_err   = (*conv->conv)(1, &msgp, &resp, conv->appdata_ptr);
+
+		if (pam_err != PAM_SUCCESS)
+			logger(LOG_TYPE_ERROR,
+			       "Failed to send our reply: %s", 
+			       pam_strerror(pam, pam_err));
+
+		if (resp) free(resp->resp);
+		free(resp);
+	}
+}
+
+bool
+_has_scope(char * fqdns[], const char * scopes, const char * suffix)
+{
+	if (!scopes) return false;
+	if (!fqdns)  return false;
+
+	bool found = false;
+
+	char * str  = strdup(scopes);
+	char * tmp  = str;
+	char * sptr = NULL;
+
+	// For each scope...
+	char * scope = NULL;
+	while ((scope = strtok_r(str, " ", &sptr)))
+	{
+		str = NULL;
+
+		// Check the prefix
+		const char * prefix = "https://auth.globus.org/scopes/";
+		if (strncmp(scope, prefix, strlen(prefix)))
+			continue;
+
+		const char * slash = strchr(scope+strlen(prefix), '/');
+		if (!slash) continue;
+
+		// Check the suffix
+		if (strcmp(slash+1, suffix))
+			continue;
+
+		// Check the FQDN
+		for (int i = 0; fqdns[i]; i++)
+		{
+			// Check that the length of the FQDN's match
+			if (strlen(fqdns[i]) != (slash - (scope+(strlen(prefix)))))
+				continue;
+
+			// Check that the FQDN's match
+			if (strncmp(fqdns[i], scope+strlen(prefix), strlen(fqdns[i])))
+				continue;
+
+			// Found it
+			found = true;
+			goto cleanup;
+		}
+	}
+
+	cleanup:
+	free(tmp);
+	return found;
+}
+
+bool
+_is_token_valid(const struct introspect * introspect,
+                const struct client     * client)
+{
+	if (introspect->active == false)
+		return false;
+
+	if (introspect->exp < time(NULL))
+		return false;
+
+	// This would indicate time skew on the local system
+	if (introspect->iat > time(NULL))
+		return false;
+
+	if (introspect->nbf > time(NULL))
+		return false;
+
+	if (!_has_scope(client->fqdns, introspect->scope, "ssh"))
+		return false;
+
+	return true;
+}
+
+static const struct identity_provider *
+_lookup_idp(const struct identities * identities, const char * idp_uuid)
+{
+	// Should never happen
+	if (!identities->included.identity_providers)
+		return NULL;
+
+	for (int i = 0; identities->included.identity_providers[i]; i++)
+	{
+		// Shortcut
+		const struct identity_provider * identity_provider = NULL;
+		identity_provider = identities->included.identity_providers[i];
+
+		// config specified an IdP UUID
+		if (strcmp(identity_provider->id, idp_uuid) == 0)
+			return identity_provider;
+	}
+
+	// Should never happen
+	return NULL;
+}
+
+static bool
+_is_session_valid(const struct config     * config,
+                  const struct introspect * introspect,
+                  const struct identities * identities)
+{
+	/*
+	 * Security Policy Enforcement
+	 */
+
+	if (!config->permitted_idps && !config->authentication_timeout)
+		return true;
+
+	if (!introspect->session_info || !introspect->session_info->authentications)
+		return false;
+
+	for (int k = 0; introspect->session_info->authentications[k]; k++)
+	{
+		// Shortcut to the authentication structure
+		const struct authentication * authentication = NULL;
+		authentication = introspect->session_info->authentications[k];
+
+		if (config->authentication_timeout)
+		{
+			time_t seconds_since_auth = time(NULL) - authentication->auth_time;
+			if (seconds_since_auth > (60*config->authentication_timeout))
+				continue;
+		}
+
+		// Recent authentication with no IdP requirement
+		if (!config->permitted_idps)
+			return true;
+
+		// Short cut to the idp used in this authentication
+		const struct identity_provider * authed_idp = NULL;
+		authed_idp = _lookup_idp(identities, authentication->idp);
+
+		// This should not happen
+		ASSERT(authed_idp);
+
+		if (authed_idp)
+		{
+			for (int i = 0; config->permitted_idps[i]; i++)
+			{
+				// Match by IdP UUID
+				if (strcmp(config->permitted_idps[i], authed_idp->id) == 0)
+					return true;
+
+				// Match by IdP domain
+				if (key_in_list(CONST(char *, authed_idp->domains),
+				                config->permitted_idps[i]))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
+static pam_status_t
+_cmd_get_security_policy(struct config * config, char ** reply)
+{
+	char * idp_list = _build_json_list(CONST(char *,config->permitted_idps));
+	char * sidps = sformat("%s%s%s", idp_list?"[":"",
+	                                 idp_list?idp_list:"null",
+	                                 idp_list?"]":"");
+	char * stmp = sformat("%d", config->authentication_timeout);
+	char * stimeout = sformat("%s", config->authentication_timeout?stmp:"null");
+	char * rformat = "{"
+	                      "\"policy\": {"
+	                          "\"permitted_idps\": %s,"
+	                          "\"authentication_timeout\": %s"
+	                      "}"
+	                 "}";
+
+	char * tmp = sformat(rformat, sidps, stimeout);
+	*reply = base64_encode(tmp);
+
+	free(idp_list);
+	free(sidps);
+	free(stmp);
+	free(stimeout);
+	free(tmp);
+	return PAM_MAXTRIES;
+}
+
+static pam_status_t
+_cmd_get_account_map(struct config  * config,
+                     const char     * access_token,
+                     char          ** reply)
+{
+	struct client     * client     = NULL;
+	struct introspect * introspect = NULL;
+	struct identities * identities = NULL;
+	struct account_map * account_map = NULL;
+
+	*reply = NULL;
+
+	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
+	introspect = get_introspect_resource(config, access_token);
+	if (!introspect)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR",
+		                            "An unexpected error occurred.");
+		goto cleanup;
+	}
+
+	client = get_client_resource(config);
+	if (!client)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR",
+		                            "An unexpected error occurred.");
+		goto cleanup;
+	}
+
+	if (!_is_token_valid(introspect, client))
+	{
+		*reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	pam_status = PAM_AUTHINFO_UNAVAIL;
+	identities = get_identities_resource(config, introspect);
+	if (!identities) goto cleanup;
+
+	if (!_is_session_valid(config, introspect, identities))
+	{
+		char * tmp = _build_error_reply("SESSION_VIOLATION",
+		                "The access token does not meet session requirements.");
+		*reply = base64_encode(tmp);
+		free(tmp);
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	account_map = account_map_init(config, identities);
+
+	char ** acct_array = _build_account_array(account_map);
+	char *  acct_list  = _build_json_list(CONST(char *,acct_array));
+	char * format = "{"
+	                    "\"account_map\": {"
+	                        "\"permitted_accounts\": [%s]"
+	                    "}"
+	                "}";
+
+	char * tmp = sformat(format, acct_list?acct_list:"");
+	*reply = base64_encode(tmp);
+
+	free_array(acct_array);
+	free(acct_list);
+	free(tmp);
+
+	pam_status = PAM_MAXTRIES;
+
+cleanup:
+	client_fini(client);
+	introspect_fini(introspect);
+	identities_fini(identities);
+	account_map_fini(account_map);
+	return pam_status;
+}
+
+static pam_status_t
+_cmd_login(pam_handle_t   * pam,
+           struct config  * config,
+           const char     * access_token,
+           char          ** reply)
+{
+	struct client      * client      = NULL;
+	struct introspect  * introspect  = NULL;
+	struct identities  * identities  = NULL;
+	struct account_map * account_map = NULL;
+
+	*reply = NULL;
+
+	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
+	introspect = get_introspect_resource(config, access_token);
+	if (!introspect)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR",
+		                            "An unexpected error occurred.");
+		goto cleanup;
+	}
+
+	client = get_client_resource(config);
+	if (!client)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR",
+		                            "An unexpected error occurred.");
+		goto cleanup;
+	}
+
+	if (!_is_token_valid(introspect, client))
+	{
+		*reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	pam_status = PAM_AUTHINFO_UNAVAIL;
+	identities = get_identities_resource(config, introspect);
+	if (!identities) goto cleanup;
+
+	if (!_is_session_valid(config, introspect, identities))
+	{
+		char * tmp = _build_error_reply("SESSION_VIOLATION",
+		                "The access token does not meet session requirements.");
+		*reply = base64_encode(tmp);
+		free(tmp);
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	account_map = account_map_init(config, identities);
+
+	const char * requested_user = NULL;
+	pam_get_user(pam, &requested_user, NULL);
+
+	if (!is_acct_in_map(account_map, requested_user))
+	{
+		pam_status = PAM_AUTH_ERR;
+		*reply = _build_error_reply("INVALID_ACCOUNT",
+		                            "You cannot use that local account.");
+		goto cleanup;
+	}
+
+	logger(LOG_TYPE_INFO,
+	       "Identity %s authorized as local user %s", 
+	       acct_to_username(account_map, requested_user),
+	       requested_user);
+
+	pam_status = PAM_SUCCESS;
+
+cleanup:
+
+	client_fini(client);
+	introspect_fini(introspect);
+	identities_fini(identities);
+	account_map_fini(account_map);
+	return pam_status;
+}
+
+
+/*
+ * This is the 'cut-n-paste your access token' method
+ */
+static pam_status_t
+_cmd_login_fallback(pam_handle_t  * pam,
+                    struct config * config,
+                    const char    * access_token)
+{
+	char * reply = NULL;
+	pam_status_t pam_status = _cmd_login(pam, config, access_token, &reply);
+	free(reply);
+	return pam_status;
 }
 
 /*
- *  * Send a single message, type text info, display the given prompt.
- *   */
-int
-display_client_message(struct pam_conv * conv,
-                       const char      * message)
+ * Breakdown the values given at our passphrase prompt.
+ */
+static void
+_decode_input(const char * user_input,
+              char      ** op,
+              char      ** access_token)
 {
-	int                pam_err = PAM_SUCCESS;
-	struct pam_message msg;
-	const struct pam_message * msgp;
-	struct pam_response      * resp;
+	char * decoded_input = NULL;
+	jobj_t * jobj = NULL;
 
-	msg.msg_style = PAM_TEXT_INFO;
-	msg.msg       = message;
-	msgp          = &msg;
+	*op = NULL;
+	*access_token = NULL;
 
-	resp      = NULL;
-	pam_err   = (*conv->conv)(1, &msgp, &resp, conv->appdata_ptr);
-	if (resp != NULL && pam_err == PAM_SUCCESS)
-	{
-		free(resp->resp);
-		free(resp);
-	}
+	decoded_input = base64_decode(user_input);
+	if (!decoded_input)
+		goto cleanup;
+	
+	jobj = jobj_init(decoded_input, NULL);
+	if (!jobj)
+		goto cleanup;
 
-	return pam_err;
-}
+	jobj_t * j_cmd = jobj_get_value(jobj, "command");
+	if (!j_cmd)
+		goto cleanup;
 
-char *
-build_acct_map_msg(const char * const accounts[])
-{
-	char * account_list = join(accounts, ',');
-	if (!account_list)
-		return strdup(NoLocalAcctMsg);
+	const char * tmp = jobj_get_string(j_cmd, "op");
+	if (tmp) *op = strdup(tmp);
 
-	const char * const list[] = {LocalAcctMsgPrefix, account_list, NULL};
-
-	char * acct_map_msg = join(list, ' ');
-
-	free (account_list);
-	return acct_map_msg;
-}
-
-static int
-lookup_accounts(const char      *   idp_suffix,
-                const char      *   map_file,
-                struct identity *   identities[],
-                char            *** accounts)
-{
-	*accounts = NULL;
-
-	struct acct_map * acct_map = acct_map_init();
-
-	int retval = 0;
-	if (idp_suffix)
-	{
-		retval = acct_map_add_module(acct_map, AcctMapModuleIdpSuffix, idp_suffix);
-		if (retval)
-			goto cleanup;
-	}
-
-	if (map_file)
-	{
-		retval = acct_map_add_module(acct_map, AcctMapModuleMapFile, map_file);
-		if (retval)
-			goto cleanup;
-	}
-
-	char ** ids = calloc((2*get_array_len((void**)identities)) + 1, sizeof(char *));
-	for (int i = 0; identities[i]; i++)
-	{
-		ids[2*i] = identities[i]->id;
-		ids[(2*i)+1] = identities[i]->username;
-	}
-
-	*accounts = acct_map_lookup(acct_map, ids);
+	tmp = jobj_get_string(j_cmd, "access_token");
+	if (tmp) *access_token = strdup(tmp);
 
 cleanup:
-	if (ids)
-		free(ids);
-	if (acct_map)
-		acct_map_free(acct_map);
-	return retval == 0 ? PAM_SUCCESS : PAM_AUTH_ERR;
+	free(decoded_input);
+	jobj_fini(jobj);
+}
+
+static pam_status_t
+_process_command(pam_handle_t  * pam,
+                 struct config * config,
+                 const char    * user_input,
+                 char         ** reply)
+{
+	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
+
+	char * op = NULL;
+	char * access_token = NULL;
+
+	_decode_input(user_input, &op, &access_token);
+
+	if (op)
+	{
+		if (strcmp(op, "get_security_policy") == 0)
+		{
+			pam_status = _cmd_get_security_policy(config, reply);
+		}
+		else if (strcmp(op, "get_account_map") == 0 && access_token)
+		{
+			pam_status = _cmd_get_account_map(config, access_token, reply);
+		}
+		else if (strcmp(op, "login") == 0 && access_token)
+		{
+			pam_status = _cmd_login(pam, config, access_token, reply);
+		} else
+		{
+			char * tmp = _build_error_reply("UNKNOWN_COMMAND",
+			                                "Unknown command.");
+			*reply = base64_encode(tmp);
+			free(tmp);
+		}
+	}
+	else
+	{
+		pam_status = _cmd_login_fallback(pam, config, user_input);
+	}
+
+	return pam_status;
+}
+
+pam_status_t
+pam_sm_authenticate(pam_handle_t *pam, int flags, int argc, const char **argv)
+{
+	struct config * config     = NULL;
+	char          * user_input = NULL;
+	char          * reply      = NULL;
+	pam_status_t    pam_status = PAM_AUTHINFO_UNAVAIL;
+
+	(void) logger_init(flags, argc, argv);
+
+	config = config_init(flags, argc, argv);
+	if (!config) goto cleanup;
+
+	user_input = _read_user_request(pam);
+	if (!user_input) goto cleanup;
+
+	pam_status = _process_command(pam, config, user_input, &reply);
+	_send_our_reply(pam, reply);
+
+cleanup:
+	config_fini(config);
+	free(reply);
+	free(user_input);
+	return pam_status;
+}
+
+int
+pam_sm_setcred(pam_handle_t *pam, int flags, int argc, const char **argv)
+{
+	if (flags & PAM_SILENT) {}
+	if (flags & PAM_ESTABLISH_CRED) {}
+	if (flags & PAM_DELETE_CRED) {}
+	if (flags & PAM_REINITIALIZE_CRED) {}
+	if (flags & PAM_REFRESH_CRED) {}
+	return PAM_SUCCESS;
 }
