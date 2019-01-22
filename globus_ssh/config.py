@@ -1,75 +1,98 @@
+import stat
+import ast
 import os
-from .token import Token
+
+from .constants import *
+from .exceptions import GlobusSSHError
 
 try:
     import ConfigParser as configparser
 except ImportError:
     import configparser
 
-"""Provides the interface for saving/retrieving tokens from disk.
+class ConfigError(GlobusSSHError):
+    "Base exception for all Config exceptions"""
 
-ConfigParser already provides a generic configuration file functionality.
-Our Config class makes the config file look like a coherent set of data 
-types known to globus-ssh. Config files are currently indexed by fqdn. 
-"""
+def _check_permissions(path):
+    if os.path.exists(path):
+        if not os.path.isfile(path):
+            raise ConfigError(path + ' is not a regular file')
+        if not os.access(path, os.R_OK|os.W_OK):
+            raise ConfigError(path +  ' has bad permissions, should be 0600')
+        # Don't allow Group/Other permissions
+        st = os.stat(path)
+        if st.st_mode & (stat.S_IRWXG|stat.S_IRWXO):
+            raise ConfigError(path +  ' is too permissive, should be 0600')
+    else:
+        dir = os.path.dirname(path)
+        if not os.path.isdir(dir):
+            raise ConfigError(path 
+                              + ' is not a valid path: '
+                              + ' parent is not a directory')
 
+        if not os.access(dir, os.X_OK|os.W_OK):
+            raise ConfigError('Can not create the config file in '
+                              + dir
+                              + 'parent directory permissions are too '
+                              + 'restrictive')
 
-class Config():
-    """Abstract mgmt of persistent data.
+def _load_file(path):
+    _check_permissions(path)
+    config = configparser.SafeConfigParser()
+    config.optionxform = str # case-sensitive keys
+    try:
+        config.read(path)
+    except configparser.Error as e:
+        raise ConfigError('Error parsing ' + path + ': ' + e.message)
+    return config
 
-    The config file to load is expected to use a basic ini format:
-       [Section_Name]
-       key1 = value1
-       key2 = value2
+def _save_file(path, config):
+    _check_permissions(path)
+    try:
+        mask = os.umask(0o077)
+        fd = os.open(path, os.O_WRONLY|os.O_CREAT|os.O_TRUNC, 0o600)
+    except OSError as e:
+        raise ConfigError('Could not open ' + path + ': ' + e.strerror)
+    finally:
+        mask = os.umask(0o077)
+    with os.fdopen(fd, 'w') as f:
+        config.write(f)
 
-    Note: Config does not cause a fuss if it can not access the config 
-    file but it will complain if it can not write the config file. The
-    read behavior will likely change in the future.
+def load_section(section):
+    config = _load_file(CONFIG_FILE)
+    if not config.has_section(section):
+        return {}
+    return dict(config.items(section))
 
-    Currently supports only Token persistence but may be extended with
-    other data in the future. The Token structure is intentionally treated
-    as opaque.
-    """
+def save_section(section, values):
+    config = _load_file(CONFIG_FILE)
+    if config.has_section(section):
+    	config.remove_section(section)
+    config.add_section(section)
+    for k,v in values.items():
+        config.set(section, k, str(v))
+    _save_file(CONFIG_FILE, config)
 
-    def __init__(self, file):
-        self._file   = file
-        self._config = configparser.SafeConfigParser()
-        self._config.read(self._file)
+def delete_section(section):
+    config = _load_file(CONFIG_FILE)
+    if not config.has_section(section):
+        return
+    config.remove_section(section)
+    _save_file(CONFIG_FILE, config)
 
-    def load_token(self, fqdn):
-        """Load section 'fqdn', if present, and convert to Token"""
-        if not self._config.has_section(fqdn):
-            return None;
-        kw=dict(self._config.items(fqdn))
-        for k in kw:
-            if kw[k] == 'None':
-                kw[k] = None
-        return Token(**kw)
+def load_object(section, cls):
+    values = load_section(section)
+    if cls.__name__ in values:
+        return cls(**ast.literal_eval(values[cls.__name__]))
+    return None
 
-    def save_token(self, fqdn, token):
-        """Save section 'fqdn' using attributes of Token"""
-        if not self._config.has_section(fqdn):
-            self._config.add_section(fqdn)
-        for k in token:
-           self._config.set(fqdn, k, str(token[k]))
-        self._flush()
+def save_object(section, inst):
+    values = load_section(section)
+    values[inst.__class__.__name__] = inst
+    save_section(section, values)
 
-    def delete_token(self, fqdn):
-        """Delete section 'fqdn'"""
-        if self._config.has_section(fqdn):
-            for k in Token():
-                self._config.remove_option(fqdn, k)
-        self._flush()
-
-    def _flush(self):
-        mask = os.umask(0o177)
-
-        try:
-            with open(self._file, 'w') as configfile:
-                self._config.write(configfile)
-            os.chmod(self._file, 0o600)
-
-        except Exception as e:
-            os.umask(mask)
-            raise e
-        os.umask(mask)
+def delete_object(section, cls):
+    values = load_section(section)
+    if cls.__name__ in values:
+        del values[cls.__name__]
+    save_section(section, values)
