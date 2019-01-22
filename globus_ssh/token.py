@@ -1,57 +1,26 @@
+import time
 
-"""Wrap Globus Auth token information and provide basic utilities."""
+from .template import Template
 
-class Token():
-    """Provide a container for information related to the Globus Auth token.
-
-    Token implements the following contractual agreement(s):
-    - it can be parsed, accessed and filled as an opaque structure
-    - it lays no claims towards the validity of the held information
-
-    Rationale:
-    - An external use (ex Config) should be able to store, retrieve and
-      initialize this structure without being tightly coupled to how a
-      Token is implemented or which fields determine a valid token.
-    - Error handling for missing or invalid field values is context
-      sensative and should be handled at a higher logic level
-    """
+class Token(Template):
+    KEYS = {
+        'scope': str,
+        'token_type': str,
+        'access_token': str,
+        'refresh_token': str,
+        'authorized_at': int,
+        'resource_server': str,
+        'expires_at': int,
+    }
 
     def __init__(self, **kw):
-        self.scope              = kw.get('scope',              None)
-        self.token_type         = kw.get('token_type',         None)
-        self.access_token       = kw.get('access_token',       None)
-        self.refresh_token      = kw.get('refresh_token',      None)
-        self.resource_server    = kw.get('resource_server',    None)
-        self.expires_at_seconds = kw.get('expires_at_seconds', None)
+        if 'expires_in' in kw:
+            kw = kw.copy()
+            kw['expires_at'] = int(kw['expires_in']) + int(time.time())
+        super(Token, self).__init__(Token.KEYS, kw)
 
-        if self.expires_at_seconds is not None:
-            self.expires_at_seconds = int(self.expires_at_seconds)
-
-    def __iter__(self):
-        """Return an iter of our variables to support opaque handlers"""
-        return iter(vars(self))
-
-    def __getitem__(self, key):
-        """Return the value of local var 'key' to support opaque handlers"""
-        return vars(self)[key]
-
-    def __eq__(self, rhs): 
-        """Determine if two Tokens are identical"""
-        if rhs is None:
-            return False
-        try:
-            for k in self:
-                if self[k] != rhs[k]:
-                    return False
-        except:
-            return False
-        return True
-
-def has_scopes(token, scopes):
-    if token.scope is None:
-        return False;
-    for s in scopes.split():
-        if not s in token.scope.split():
-            return False
-    return True
-
+    def update(self, values):
+        if 'expires_in' in values:
+            values = values.copy()
+            values['expires_at'] = int(values['expires_in']) + int(time.time())
+        super(Token, self).update(values)
