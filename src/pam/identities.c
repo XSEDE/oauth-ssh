@@ -174,11 +174,11 @@ get_identities(jarr_t * jarr, void * value)
 // XXX some IDPs can hide certain values
 		if (GET_VALUE(jobj, i[k], username,          string) == failure ||
 		    GET_VALUE(jobj, i[k], status,            string) == failure ||
-		    GET_VALUE(jobj, i[k], name,              string) == failure ||
 		    GET_VALUE(jobj, i[k], id,                string) == failure ||
-		    GET_VALUE(jobj, i[k], identity_provider, string) == failure ||
-		    GET_VALUE(jobj, i[k], organization,      string) == failure ||
-		    GET_VALUE(jobj, i[k], email,             string) == failure)
+		    GET_VALUE(jobj, i[k], identity_provider, string) == failure)
+		    //GET_VALUE(jobj, i[k], name,              string) == failure ||
+		    //GET_VALUE(jobj, i[k], organization,      string) == failure ||
+		    //GET_VALUE(jobj, i[k], email,             string) == failure)
 		{
 			return failure;
 		}
@@ -222,11 +222,11 @@ identities_fini(struct identities * i)
 			{
 				free(i->identities[j]->username);
 				free(i->identities[j]->status);
-				free(i->identities[j]->name);
+				//free(i->identities[j]->name);
 				free(i->identities[j]->id);
 				free(i->identities[j]->identity_provider);
-				free(i->identities[j]->organization);
-				free(i->identities[j]->email);
+				//free(i->identities[j]->organization);
+				//free(i->identities[j]->email);
 				free(i->identities[j]);
 			}
 		}

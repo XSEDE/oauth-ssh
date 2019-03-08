@@ -20,11 +20,11 @@ struct identities {
 	struct identity {
 		char * username;
 		char * status;
-		char * name; // could be null
+//		char * name; // could be null
 		char * id;
 		char * identity_provider;
-		char * organization; // could be null
-		char * email; // could be null
+//		char * organization; // could be null
+//		char * email; // could be null
 	} ** identities;
 };
 

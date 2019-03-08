@@ -27,8 +27,6 @@ check_key(jobj_t * jobj, const char * key, json_type expected_type)
 		return failure;
 	}
 
-	json_type actual_type = jobj_get_type(jobj, key);
-
 	if (jobj_get_type(jobj, key) != expected_type)
 	{
 		logger(LOG_TYPE_ERROR,

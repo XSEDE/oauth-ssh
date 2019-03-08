@@ -56,7 +56,7 @@ get_introspect_resource(const struct config * config, const char * token)
 	if (http_post_request(config, request_url, request_body, &reply_body))
 		goto cleanup;
 
-	if (json = jobj_init(reply_body, &error_msg))
+	if ((json = jobj_init(reply_body, &error_msg)))
 	{
 		if (!jobj_key_exists(json, "errors"))
 			introspect = introspect_init(json);
@@ -110,7 +110,7 @@ get_client_resource(const struct config * config)
 	if (http_get_request(config, request_url, &reply_body))
 		goto cleanup;
 
-	if (json = jobj_init(reply_body, &error_msg))
+	if ((json = jobj_init(reply_body, &error_msg)))
 	{
 		if (!jobj_key_exists(json, "errors"))
 			client = client_init(json);
@@ -152,7 +152,7 @@ get_identities_resource(const struct config * config,
 	if (http_get_request(config, request_url, &reply_body))
 		goto cleanup;
 
-	if (json = jobj_init(reply_body, &error_msg))
+	if ((json = jobj_init(reply_body, &error_msg)))
 	{
 		if (!jobj_key_exists(json, "errors"))
 			identities = identities_init(json);
