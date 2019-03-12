@@ -139,7 +139,7 @@ class Transport(paramiko.transport.Transport):
 
             m = hashlib.sha256()
             m.update(remote_host_key.get_fingerprint())
-            fingerprint = base64.b64encode(m.digest())
+            fingerprint = base64.b64encode(m.digest()).decode("utf-8")
 
             print(key_name + " key fingerprint is SHA256:" + fingerprint)
 
