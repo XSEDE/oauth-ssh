@@ -108,7 +108,7 @@ class CmdInjectHandler():
 
 def decode_reply(reply):
     try:
-        return json.loads(base64.b64decode(reply.rstrip('\n')))
+        return json.loads(base64.b64decode(reply.rstrip('\n')).decode("utf-8"))
     except Exception as e:
         raise UnexpectedSSHReply(reply)
 
