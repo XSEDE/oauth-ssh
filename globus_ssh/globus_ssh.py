@@ -151,6 +151,9 @@ def globus_ssh():
             # escape characters
             oldtty = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
+            if command is None or len(command) == 0:
+            	# Forward escapes like control-C
+            	tty.setraw(sys.stdin.fileno())
         channel.settimeout(None)
 
         watch_list = [channel, sys.stdin]
