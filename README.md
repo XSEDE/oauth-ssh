@@ -2,10 +2,10 @@
 
 Provides Globus Auth token management and a basic SSH client that performs Globus Auth authorization.
 
-Source Code: https://github.com/globus/globus-ssh
+Source Code: https://github.com/xsede/globus-ssh-client
 
 Bugs reports and feature requests are open submission, and should be filed at
-https://github.com/globus/globus-ssh/issues
+https://github.com/xsede/globus-ssh-client/issues
 
 The PyPi project can be found at: https://pypi.org/project/globus-ssh/
 
@@ -24,7 +24,7 @@ make {develop|test|package} [PYTHON_VERSION=<x.y.z>]
   python version supported by pyenv.
 ```
 
-Installation of prerequisites:
+Installation of prerequisites (Enterprise Linux and derivatives):
 ```shell
 sudo yum install -y epel-release git
 sudo yum install -y python2-pip  
