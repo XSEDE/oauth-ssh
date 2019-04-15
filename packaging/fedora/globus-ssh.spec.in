@@ -1,0 +1,143 @@
+
+%global   _name @PACKAGE_NAME@
+%global   soname 0
+
+#
+# preamble section
+#
+Name:     globus-ssh
+Summary:  SSH with Globus Auth
+Version:  @PACKAGE_VERSION@
+Release:  1%{?dist}
+License:  Proprietary
+Group:    Applications/Internet
+Source:   %{_name}-%{version}.tar.gz
+URL:      @PACKAGE_URL@
+Vendor:   Globus
+Packager: @PACKAGE_BUGREPORT@
+#%define   debug_package %{nil}
+
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+BuildRequires:  libcurl-devel
+BuildRequires:  openssl-devel
+BuildRequires:  json-c-devel
+BuildRequires:  pam-devel
+BuildRequires:  pkgconfig
+BuildRequires:  automake
+BuildRequires:  libtool
+BuildRequires:  libtool-ltdl-devel
+BuildRequires:  checkpolicy
+BuildRequires:  policycoreutils-python
+BuildRequires:  python-setuptools
+
+Requires:  libcurl
+Requires:  openssl
+Requires:  json-c
+Requires:  pam
+Requires:  python-click
+
+Requires(post): /usr/sbin/semodule, /usr/sbin/useradd, /usr/bin/getent
+Requires(postun): /usr/sbin/userdel, /usr/sbin/semodule
+
+#
+# description section
+#
+%description
+SSH with Globus Auth provides a PAM module for use with SSH authentication
+in order to introspect OAuth2 access tokens and perform account mapping.
+
+#
+# prep section
+#
+%prep
+%setup -q -n %{_name}-%{version}
+
+#
+# build section
+#
+%build
+
+%if %{?fedora}%{!?fedora:0} >= 19 || %{?rhel}%{!?rhel:0} >= 7 || %{?suse_version}%{!?suse_version:0} >= 1315
+# Remove files that should be replaced during bootstrap
+rm -rf autom4te.cache
+autoreconf -if
+%endif
+
+%configure \
+           --disable-static \
+           --docdir=%{_docdir}/%{name}-%{version} \
+           --includedir=%{_includedir}/globus \
+           --libexecdir=%{_datadir}/globus \
+           --libdir=%{_libdir}/security
+
+make %{?_smp_mflags}
+
+#
+# check section
+#
+# XXX not until we can figure out how to add cmocka to the build
+# and set LD_LIBRARY_PATH accordingly for 'make check'
+#%check
+#make check
+
+#
+# install section
+#
+%install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
+rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_globus.la
+rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
+
+/usr/bin/checkmodule -M -m -o globus-ssh.mod data/globus-ssh.te
+/usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.pp -m globus-ssh.mod
+
+#
+# files section
+#
+%files
+%defattr(-,root,root,-)
+%{_docdir}/%{name}-%{version}/globus-ssh.pp
+%{_libdir}/security/pam_globus.*
+/usr/lib/*
+/usr/sbin/*
+/usr/share/*
+%config(noreplace) %{_sysconfdir}/globus/globus-acct-map
+%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/globus/globus-ssh.conf
+
+#
+# install/uninstall sections
+#
+
+%post
+/usr/bin/getent passwd globus-mapping || /usr/sbin/useradd -r -s /sbin/nologin globus-mapping
+/usr/sbin/semodule -i %{_docdir}/%{name}-%{version}/globus-ssh.pp
+
+%postun
+if [ $1 -ne 1 ] ; then
+    /usr/sbin/userdel globus-mapping
+    /usr/sbin/semodule -r globus-ssh
+fi
+
+#
+# clean section
+#
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+#
+# changelog section
+#
+%changelog
+* Fri Mar  8 2019 <support@globus.org> - @PACKAGE_VERSION@
+- Fixed for optional fields in the identities reply
+
+* Wed Feb 27 2019 Globus <support@globus.org> - 0.4
+- Added High Assurance Session support
+
+* Wed Oct 17 2018 Globus <support@globus.org> - 0.3
+- Added Support for TXT-record FQDN validation
+
+* Thu Oct 16 2018 Globus <support@globus.org> - 0.2
+- Added globus-ssh-config for registering DNS with Globus Auth

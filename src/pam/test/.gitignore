@@ -1,0 +1,16 @@
+*.log
+*.trs
+integ_pam_module_load
+unit_acct_map
+unit_acct_map_module_file
+unit_acct_map_module_idp
+unit_config
+unit_credentials
+unit_http
+unit_identities
+unit_introspect
+unit_json
+unit_pam_utils
+unit_scope
+unit_strings
+func_pam

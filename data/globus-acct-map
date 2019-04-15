@@ -1,0 +1,32 @@
+# The format of this file is:
+#  - blank lines are ignored
+#  - comments begin with '#' and are ignored
+#  - one key/value pair per line, separated by space
+#  - keys do not need to be unique, values will be merged for matching keys
+#  - the user will be able to choose which account to use based on any
+#    key matching any of his/her linked identities. Order within this file
+#    is not important.
+#  - leading spaces are ignored
+#  - each key must be an Auth identity id or username
+#  - value must specify one or more local accounts delimited by space or commas
+
+# Examples:
+#
+# Map user with linked identity 'johndoe@globus.org to local account 'johndoe':
+#
+# johndoe@globus.org johndoe
+
+# Add two additional account options for johndoe. This is automatically added
+# with the previous example:
+#
+# johndoe@uchicago.org jd, jdoe
+
+# Map user with linked ID 8aa6baa8-127f-4e34-b7e7-fa232bad1d8f to 'janedoe':
+#
+# 8aa6baa8-127f-4e34-b7e7-fa232bad1d8f janedoe
+
+# Assuming 'Jeff Doe' has linked accounts jeff@xsede.org, doe@globus.org,
+# Jeff will be able to choose to login into either of these accounts:
+#
+# jeff@xsede.org jeffdoe
+# doe@globus.org jeff_doe
