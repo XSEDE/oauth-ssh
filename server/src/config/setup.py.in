@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='@PACKAGE_NAME@-config',
     version='@PACKAGE_VERSION@',
-    description="SSH with Globus Auth",
+    description="SSH with OAuth",
     url="@PACKAGE_URL@",
     author_email="@PACKAGE_BUGREPORT@",
     packages=find_packages(),
@@ -18,10 +18,10 @@ setup(
 
     entry_points='''
         [console_scripts]
-        globus-ssh-config=globus_ssh_config.globus_ssh_config:entry_point
+        oauth-ssh-config=oauth_ssh_config.oauth_ssh_config:entry_point
     ''',
 
-    keywords=["globus", "ssh", "scp"],
+    keywords=["oauth", "ssh"],
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: System Administrators",

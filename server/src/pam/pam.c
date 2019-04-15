@@ -100,7 +100,7 @@ _get_pam_conv(pam_handle_t * pam)
 static char *
 _read_user_request(pam_handle_t * pam)
 {
-	const char * prompt = "Enter your Globus Auth token: ";
+	const char * prompt = "Enter your OAuth token: ";
 
 	int pam_err = PAM_SUCCESS;
 	struct pam_message msg;

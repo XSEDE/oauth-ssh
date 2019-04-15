@@ -1,6 +1,6 @@
-# This selinux module allows sshd to talk with Globus Auth
+# This selinux module allows sshd to talk with OAuth token services
 
-module globus-ssh 1.0;
+module oauth-ssh 1.0;
 
 require {
         type http_port_t;

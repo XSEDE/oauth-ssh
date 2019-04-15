@@ -8,15 +8,15 @@ from . import config as Config
 from . import globus_auth as Auth
 from .account_map import AccountMap
 from .ssh_service import SSHService
-from .exceptions import GlobusSSHError
+from .exceptions import OAuthSSHError
 from .policy import Policy
 from .token  import Token
 
-class NeedToAuthorize(GlobusSSHError):
+class NeedToAuthorize(OAuthSSHError):
     def __init__(self, fqdn, msg):
         super(NeedToAuthorize, self).__init__(
              msg
-           + " Use `globus-ssh-token authorize " 
+           + " Use `oauth-ssh-token authorize " 
            + fqdn 
            + "`.")
 
@@ -86,7 +86,7 @@ def handle_errors(func):
     def wrapper(*args, **kw):
         try:
             func(*args, **kw)
-        except GlobusSSHError as e:
+        except OAuthSSHError as e:
             click.echo(e)
             click.get_current_context().exit(1)
         click.get_current_context().exit(1)
@@ -94,16 +94,16 @@ def handle_errors(func):
 
 #####################################
 #
-# BEGIN globus-ssh-token SUBCOMMANDS
+# BEGIN oauth-ssh-token SUBCOMMANDS
 #
 #####################################
 @click.group()
-def globus_ssh_token():
+def oauth_ssh_token():
     pass
 
 #####################################
 #
-# globus-ssh-token authorize
+# oauth-ssh-token authorize
 #
 #####################################
 @click.command('authorize', 
@@ -144,11 +144,11 @@ def token_authorize(fqdn, port, identity):
     revoke_token(fqdn, 'refresh_token')
     Config.save_object(fqdn, token)
     
-globus_ssh_token.add_command(token_authorize)
+oauth_ssh_token.add_command(token_authorize)
 
 ###################################
 #
-# globus-ssh-token revoke
+# oauth-ssh-token revoke
 #
 ###################################
 @click.command('revoke', short_help='Revoke the access and refresh tokens')
@@ -159,22 +159,22 @@ def token_revoke(fqdn):
     revoke_token(fqdn, 'refresh_token')
     Config.delete_section(fqdn)
 
-globus_ssh_token.add_command(token_revoke)
+oauth_ssh_token.add_command(token_revoke)
 
 ###################################
 #
-# globus-ssh-token show
+# oauth-ssh-token show
 #
 ###################################
 @click.group('show', short_help='Display stored details about FQDN.')
 def token_show():
     pass
 
-globus_ssh_token.add_command(token_show)
+oauth_ssh_token.add_command(token_show)
 
 ###################################
 #
-# globus-ssh-token show account_map
+# oauth-ssh-token show account_map
 #
 ###################################
 @click.command('accounts',
@@ -198,7 +198,7 @@ token_show.add_command(show_accounts)
 
 ###################################
 #
-# globus-ssh-token show token
+# oauth-ssh-token show token
 #
 ###################################
 @click.command('token', short_help='Display the token for FQDN.')

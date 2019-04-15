@@ -1,7 +1,3 @@
-##
-## Copyright The University of Chicago
-## All Rights Reserved.
-##
 SUBDIRS = .
 
 if UNIT_TEST
@@ -11,10 +7,10 @@ endif
 
 ACLOCAL_AMFLAGS = -I m4
 
-lib_LTLIBRARIES    = pam_globus.la
-pam_globus_la_LDFLAGS = -module -shared
-pam_globus_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread
-pam_globus_la_SOURCES = account_map.c \
+lib_LTLIBRARIES    = pam_oauth_ssh.la
+pam_oauth_ssh_la_LDFLAGS = -module -shared
+pam_oauth_ssh_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread
+pam_oauth_ssh_la_SOURCES = account_map.c \
                         account_map.h \
                         base64.c \
                         base64.h \

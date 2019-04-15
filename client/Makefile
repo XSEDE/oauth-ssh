@@ -27,7 +27,7 @@ ifndef PYTHON_VERSION
     PIP=$(VENV_ROOT)/bin/pip
 endif
 
-GLOBUS_SSH=$(VENV_ROOT)/bin/globus-ssh
+OAUTH_SSH=$(VENV_ROOT)/bin/oauth-ssh
 NOSETESTS=$(VENV_ROOT)/bin/nosetests
 VENV_NAME=$(shell basename $(VENV_ROOT))
 
@@ -36,10 +36,10 @@ $(PY_VER_ROOT):
 	pyenv install --skip-existing $(PYTHON_VERSION)
 endif
 
-develop: $(GLOBUS_SSH)
+develop: $(OAUTH_SSH)
 	@echo "Use \". $(VENV_ROOT)/bin/activate\""
 
-test: $(GLOBUS_SSH) $(NOSETESTS)
+test: $(OAUTH_SSH) $(NOSETESTS)
 	$(NOSETESTS) -v -s
 
 $(VENV_ROOT): $(PY_VER_ROOT)
@@ -47,7 +47,7 @@ $(VENV_ROOT): $(PY_VER_ROOT)
 	$(PIP) install --upgrade pip
 	$(PIP) install --upgrade setuptools
 
-$(GLOBUS_SSH): $(VENV_ROOT)
+$(OAUTH_SSH): $(VENV_ROOT)
 	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py develop
 
 $(NOSETESTS): $(VENV_ROOT)
@@ -59,7 +59,7 @@ package: $(VENV_ROOT)
 	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py bdist_wheel --universal
 
 clean:
-	rm -rf globus_ssh.egg-info
+	rm -rf oauth_ssh.egg-info
 	rm -rf $(VENV_NAME)
 	find . -name '*pyc' -exec rm {} \;
 

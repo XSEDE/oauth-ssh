@@ -1,6 +1,6 @@
 VIRTUALENV=venv
 
-EXTRA_DIST=setup.py globus_ssh_config
+EXTRA_DIST=setup.py oauth_ssh_config
 
 #
 # buildrpm target
@@ -15,4 +15,4 @@ develop: $(VIRTUALENV)
 	$(VIRTUALENV)/bin/python setup.py develop
 
 clean:
-	rm -rf dist globus_ssh_config.egg-info *pyc $(VIRTUALENV) build
+	rm -rf dist oauth_ssh_config.egg-info *pyc $(VIRTUALENV) build
