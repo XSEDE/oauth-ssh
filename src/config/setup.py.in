@@ -1,0 +1,32 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='@PACKAGE_NAME@-config',
+    version='@PACKAGE_VERSION@',
+    description="SSH with Globus Auth",
+    url="@PACKAGE_URL@",
+    author_email="@PACKAGE_BUGREPORT@",
+    packages=find_packages(),
+
+    # Only enforced with setuptools 24.2.0+ and pip 9.0.0+
+    python_requires='==2.7',
+
+    install_requires=[
+        'Click>=6.7,<7',
+        'requests',
+    ],
+
+    entry_points='''
+        [console_scripts]
+        globus-ssh-config=globus_ssh_config.globus_ssh_config:entry_point
+    ''',
+
+    keywords=["globus", "ssh", "scp"],
+    classifiers=[
+        "Development Status :: 1 - Planning",
+        "Intended Audience :: System Administrators",
+        "Operating System :: POSIX",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 2.7",
+    ],
+)
