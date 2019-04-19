@@ -1,11 +1,11 @@
 import os
 
-PREFILL_NAMED_GRANT = "SSH Client with Globus Auth (Demo)"
+PREFILL_NAMED_GRANT = "OAuth SSH Client"
 USE_REFRESH_TOKENS  = True
 SCOPE_FORMAT        = "https://auth.globus.org/scopes/{fqdn}/ssh"
-CONFIG_FILE         = os.path.expanduser('~/.globus-ssh.cfg')
-PROMPT              = "Enter your Globus Auth token: "
-GLOBUS_ACCOUNT      = 'globus-mapping'
+CONFIG_FILE         = os.path.expanduser('~/.oauth-ssh.cfg')
+PROMPT              = "Enter your OAuth token: "
+GLOBUS_ACCOUNT      = 'oauth-ssh'
 PROTOCOL_VERSION    = 1
 DEFAULT_SECTION     = "General"
 
@@ -20,7 +20,7 @@ SETTINGS = {
                   )
 }
 
-ENVIRONMENT=os.environ.get('GLOBUS_SSH_ENVIRONMENT')
+ENVIRONMENT=os.environ.get('OAUTH_SSH_ENVIRONMENT')
 if ENVIRONMENT not in SETTINGS:
     ENVIRONMENT='production'
 

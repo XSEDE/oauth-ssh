@@ -11,7 +11,7 @@ import requests
 
 
 
-from .exceptions import GlobusSSHError
+from .exceptions import OAuthSSHError
 from .credential import Credential
 from .constants import *
 from .credential import Credential
@@ -27,7 +27,7 @@ else:
 
 #if sys.version[0]=="3": raw_input=input
 
-class GlobusAuthError(GlobusSSHError):
+class GlobusAuthError(OAuthSSHError):
     "Base exception for all Globus Auth exceptions"""
 
 def _perform_request(method, path, **kw):
@@ -44,7 +44,7 @@ def _perform_request(method, path, **kw):
 
 def register_client():
     path = '/v2/api/clients'
-    name = 'SSH Client with Globus Auth [' \
+    name = 'Oauth SSH Client [' \
             + getpass.getuser() \
             + "@" \
             + socket.gethostname()  \

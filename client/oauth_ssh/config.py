@@ -3,14 +3,14 @@ import ast
 import os
 
 from .constants import *
-from .exceptions import GlobusSSHError
+from .exceptions import OAuthSSHError
 
 try:
     import ConfigParser as configparser
 except ImportError:
     import configparser
 
-class ConfigError(GlobusSSHError):
+class ConfigError(OAuthSSHError):
     "Base exception for all Config exceptions"""
 
 def _check_permissions(path):

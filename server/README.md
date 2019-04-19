@@ -1,6 +1,6 @@
 # Server-Side Installation
 
-The `globus-ssh` server package enables federated identity authorization
+The `oauth-ssh` server package enables federated identity authorization
 within the SSH service. It provides a PAM module which allows for
 authorization of remote users based on identities linked across
 institutional boundaries. This permits the service administrator to
@@ -20,14 +20,14 @@ assurance that the connecting user is infact the authorized user.
 
 ## Supported Linux Distributions
 
-The globus-ssh server packages are currently supported on the following
+The oauth-ssh server packages are currently supported on the following
 Linux distributions:
 
   - CentOS 7
 
 ## Register the SSH Service on Globus developers console
 
-In order for globus-ssh to accept access tokens and perform account
+In order for oauth-ssh to accept access tokens and perform account
 mapping, it is first necessary to register this SSH installation with
 Globus Auth. Visit
 [developers.globus.org](https://developers.globus.org/) and select
@@ -66,7 +66,7 @@ Globus Auth. Visit
 5.  Click "Generate a New Client Secret", fill out the form.
 
 6.  Save the client_id and client_secret values for use in the
-    globus-ssh.conf file later.
+    oauth-ssh.conf file later.
 
 7.  It is also recommended that you add other appropriate users in your
     organization as administrators of the project for the sake of
@@ -82,21 +82,21 @@ Globus Auth. Visit
 
 ## Installation on CentOS 7
 
-First, add the Globus repository to your package management system:
+First, add the XSEDE development repository to your package management system:
 
-    $ sudo rpm --import https://downloads.globus.org/toolkit/gt6/stable/repo/rpm/RPM-GPG-KEY-Globus
-    $ sudo yum install https://downloads.globus.org/toolkit/gt6/stable/installers/repo/rpm/globus-toolkit-repo-latest.noarch.rpm
+    $ sudo yum install http://software.xsede.org/development/repo/repos/XSEDE-Development-config.centos-7-1.noarch.rpm
+    $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-XSEDE-Development
 
-Then, install the globus-ssh server packages:
+Then, install the oauth-ssh server packages:
 
-    $ sudo yum install globus-ssh
+    $ sudo yum install oauth-ssh
 
-## Configure /etc/globus/globus-ssh.conf
+## Configure /etc/oauth_ssh/globus-ssh.conf
 
-Edit /etc/globus/globus-ssh.conf to configure globus-ssh.
+Edit /etc/oauth_ssh/globus-ssh.conf to configure oauth-ssh.
 
 These first two options, `client_id` and `client_secret` allow
-globus-ssh to communicate with Globus Auth in order to validate access
+oauth-ssh to communicate with Globus Auth in order to validate access
 tokens passed by the client and to determine the client identity:
 
   - client_id <client_id>  
@@ -105,7 +105,7 @@ tokens passed by the client and to determine the client identity:
   - client_secret <client_secret>  
     Enter the client_secret saved during app registration
 
-The next two options configure globus-ssh for mapping from Globus Auth
+The next two options configure oauth-ssh for mapping from Globus Auth
 identities to local user accounts. You must choose at least one of the
 account mapping options, `idp_suffix` or `map_file`, or you can choose
 both. If both options are enabled, no priority or ordering is given to
@@ -192,7 +192,7 @@ Consider the following example map file:
     user123@exmaple.com                   bob
     2927e521-5582-4caf-897d-f978ec9a1c21  suzy
 
-When a user connects to the SSH service, globus-ssh will query Globus
+When a user connects to the SSH service, oauth-ssh will query Globus
 Auth for all identities linked to the Globus account associated with the
 access token provided by the SSH client. Each linked identity is used to
 search the map file for a matching `<globus-account-username>` or
@@ -225,7 +225,7 @@ authorized user.
 
 ## Register the service FQDN with Globus Auth
 
-In order for users of the globus-ssh client to connect and authorize to
+In order for users of the oauth-ssh client to connect and authorize to
 your SSH service, you must associate a fully qualified domain name
 (FQDN) with your Globus Auth client registered above. This association
 provides a mapping between the FQDN and your Auth client_id allowing
@@ -251,14 +251,14 @@ FQDN `ssh.demo.globus.org` with your client registration, do:
     Non-authoritative answer: ssh.demo.globus.org text = "779714b7-d1c1-4678-9128-c3f4b536f2a5"
 
 Note that the TXT record contents match the client ID exactly. In order
-to associate the FQDN with the client ID, use globus-ssh-config:
+to associate the FQDN with the client ID, use oauth-ssh-config:
 
-    # /usr/sbin/globus-ssh-config register <fqdn>
+    # /usr/sbin/oauth-ssh-config register <fqdn>
 
-By default, globus-ssh-config will retrieve the client_id and
-client_secret from /etc/globus/globus-ssh.conf. You can override the ID
+By default, oauth-ssh-config will retrieve the client_id and
+client_secret from /etc/oauth_ssh/globus-ssh.conf. You can override the ID
 and secret using the commandline options `--client-id` and
-`--client-secret`. See `globus-ssh-config --help` for more details.
+`--client-secret`. See `oauth-ssh-config --help` for more details.
 
 ## Configure SSHD to use PAM
 
@@ -272,25 +272,25 @@ Restart sshd:
 
     # systemctl restart sshd.service
 
-## Configure PAM to Use Globus
+## Configure PAM to Use OAuth SSH
 
-You must configure PAM to use pam_globus.so for sshd authentication.
+You must configure PAM to use pam_oauth_ssh.so for sshd authentication.
 The example below illustrates the modifications to PAM necessary on a
 fresh EL7 installation. Your installation may already have modifications
 to PAM in order to implement your site security policy. In that case,
 this example should serve as a reference and you are strongly encouraged
 to read PAM documentation (pam.conf(5)) before proceeding.
 
-In order to route SSH authentication requests to pam_globus.so, replace
+In order to route SSH authentication requests to pam_oauth_ssh.so, replace
 the 'auth' directives in /etc/pam.d/sshd with:
 
     auth        required      pam_sepermit.so
     auth        required      pam_env.so
-    auth        [success=done maxtries=die new_authtok_reqd=done default=ignore]    pam_globus.so
+    auth        [success=done maxtries=die new_authtok_reqd=done default=ignore]    pam_oauth_ssh.so
     auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
     auth        required      pam_deny.so
 
-pam_globus.so returns the following control values:
+pam_oauth_ssh.so returns the following control values:
 
   - success  user has successfully authenticated
 
@@ -305,7 +305,7 @@ pam_globus.so returns the following control values:
 > **Note**
 > 
 > When the requested account is unknown, sshd will reprompt the user
-> with the Globus access token prompt in order to avoid disclosing
+> with the OAuth token prompt in order to avoid disclosing
 > available accounts. This is by design for OpenSSH and is unavoidable.
 
 ## Developer Overview
@@ -321,12 +321,12 @@ Both options will use sudo to install prerequisites.
 
 **Testing**
 
-Globus SSH relies on the [cmocka](https://cmocka.org/) testing library. CMOCKA is installed as part of the debug and release builds.
+OAuth SSH relies on the [cmocka](https://cmocka.org/) testing library. CMOCKA is installed as part of the debug and release builds.
 
 
 **Code Submissions**
-1. Submit an issue with the [Globus SSH Repo](https://github.com/xsede/globus-ssh-server/issues).
-2. Create a fork of the official Globus SSH repository for all work.
+1. Submit an issue with the [OAuth SSH Repo](https://github.com/xsede/oauth-ssh/issues).
+2. Create a fork of the official repository for all work.
 3. Use the branch naming scheme `issue/<issue_id>` for all work related to the issue.
 4. Submit source updates to your fork.
 5. Squash all commits into a single commit with log message `Fixes #<issue_id>`. Add additoinal information as applicable but try to keep details for the change within the issue.

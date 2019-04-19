@@ -1,10 +1,5 @@
-dnl
-dnl Copyright The University of Chicago
-dnl All Rights Reserved.
-dnl
-
 AC_PREREQ([2.69])
-AC_INIT([globus_ssh], [0.5], [Globus Support <support@globus.org>], [], [https://www.globus.org])
+AC_INIT([oauth_ssh], [0.9])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -32,7 +27,7 @@ AC_CONFIG_FILES(Makefile
                 src/pam/test/Makefile 
                 src/config/Makefile
                 src/config/setup.py
-                packaging/fedora/globus-ssh.spec
+                packaging/fedora/oauth-ssh.spec
                 man/Makefile)
 
 AC_OUTPUT

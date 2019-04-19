@@ -6,7 +6,7 @@
  */
 #include <stdbool.h>
 
-#define CONFIG_DEFAULT_FILE "/etc/globus/globus-ssh.conf"
+#define CONFIG_DEFAULT_FILE "/etc/oauth_ssh/globus-ssh.conf"
 
 struct config {
 	char *  client_id;

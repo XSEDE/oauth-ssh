@@ -7,46 +7,46 @@ import json
 import sys
 import os
 
-from .exceptions import GlobusSSHError
+from .exceptions import OAuthSSHError
 from .constants import *
 
 if sys.version[0]=="3": raw_input=input
 
-class UnexpectedSSHReply(GlobusSSHError):
+class UnexpectedSSHReply(OAuthSSHError):
     def __init__(self, reply):
         msg = "Unexpected reply from the SSH service: " + str(reply)
         super(UnexpectedSSHReply, self).__init__(msg)
 
-class HostLookupFailed(GlobusSSHError):
+class HostLookupFailed(OAuthSSHError):
     def __init__(self, fqdn):
         msg = "ssh: Could not resolve hostname " \
                + fqdn \
                + ": Name or service not known"
         super(HostLookupFailed, self).__init__(msg)
 
-class ConnectionTimeout(GlobusSSHError):
+class ConnectionTimeout(OAuthSSHError):
     def __init__(self, host_port):
         msg = "Timedout connecting to " + host_port
         super(ConnectionTimeout, self).__init__(msg)
 
-class SessionViolation(GlobusSSHError):
+class SessionViolation(OAuthSSHError):
     def __init__(self, fqdn):
         msg = "The access token no longer meets this site's security policy requirements. " \
-            + "Use `globus-ssh-token authorize " + fqdn + "`."
+            + "Use `oauth-ssh-token authorize " + fqdn + "`."
         super(SessionViolation, self).__init__(msg)
 
-class AuthorizationFailure(GlobusSSHError):
+class AuthorizationFailure(OAuthSSHError):
     def __init__(self):
         msg = "Authorization to this host has failed. Likely causes are no local account or a misconfigured service."
         super(AuthorizationFailure, self).__init__(msg)
 
-class InvalidToken(GlobusSSHError):
+class InvalidToken(OAuthSSHError):
     def __init__(self):
         msg = "The access token is invalid." \
-            + "Use `globus-ssh-token authorize " + fqdn + "`."
+            + "Use `oauth-ssh-token authorize " + fqdn + "`."
         super(InvalidToken, self).__init__(msg)
 
-class UnknownHostKey(GlobusSSHError):
+class UnknownHostKey(OAuthSSHError):
     def __init__(self):
         super(UnknownHostKey, self).__init__("Host key verification failed.")
 

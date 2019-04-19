@@ -54,6 +54,6 @@ release: CFLAGS='-O3'
 release: common
 	make dist
 	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
-	cp globus_ssh-*.tar.gz SOURCES
+	cp oauth_ssh-*.tar.gz SOURCES
 	echo "%_topdir " `pwd` >> ~/.rpmmacros
-	rpmbuild -v -bb --clean  packaging/fedora/globus-ssh.spec
+	rpmbuild -v -bb --clean  packaging/fedora/oauth-ssh.spec

@@ -5,17 +5,17 @@
 #
 # preamble section
 #
-Name:     globus-ssh
-Summary:  SSH with Globus Auth
+Name:     oauth-ssh
+Summary:  SSH with OAuth
 Version:  @PACKAGE_VERSION@
 Release:  1%{?dist}
 License:  Proprietary
 Group:    Applications/Internet
 Source:   %{_name}-%{version}.tar.gz
-URL:      @PACKAGE_URL@
-Vendor:   Globus
-Packager: @PACKAGE_BUGREPORT@
-#%define   debug_package %{nil}
+
+Obsoletes: globus-ssh
+Provides: globus-ssh
+Conflicts: globus-ssh
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -44,7 +44,7 @@ Requires(postun): /usr/sbin/userdel, /usr/sbin/semodule
 # description section
 #
 %description
-SSH with Globus Auth provides a PAM module for use with SSH authentication
+OAuth SSH provides a PAM module for use with SSH authentication
 in order to introspect OAuth2 access tokens and perform account mapping.
 
 #
@@ -67,8 +67,6 @@ autoreconf -if
 %configure \
            --disable-static \
            --docdir=%{_docdir}/%{name}-%{version} \
-           --includedir=%{_includedir}/globus \
-           --libexecdir=%{_datadir}/globus \
            --libdir=%{_libdir}/security
 
 make %{?_smp_mflags}
@@ -87,37 +85,40 @@ make %{?_smp_mflags}
 %install
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
-rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_globus.la
-rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.te
+rm -f ${RPM_BUILD_ROOT}%{_libdir}/security/pam_oauth_ssh.la
+rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/oauth-ssh.te
 
-/usr/bin/checkmodule -M -m -o globus-ssh.mod data/globus-ssh.te
-/usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/globus-ssh.pp -m globus-ssh.mod
+/usr/bin/checkmodule -M -m -o oauth-ssh.mod data/oauth-ssh.te
+/usr/bin/semodule_package -o ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/oauth-ssh.pp -m oauth-ssh.mod
 
 #
 # files section
 #
 %files
 %defattr(-,root,root,-)
-%{_docdir}/%{name}-%{version}/globus-ssh.pp
-%{_libdir}/security/pam_globus.*
+%{_docdir}/%{name}-%{version}/oauth-ssh.pp
+%{_libdir}/security/pam_oauth_ssh.*
 /usr/lib/*
 /usr/sbin/*
 /usr/share/*
-%config(noreplace) %{_sysconfdir}/globus/globus-acct-map
-%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/globus/globus-ssh.conf
+%config(noreplace) %{_sysconfdir}/oauth_ssh/globus-acct-map
+%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/oauth_ssh/globus-ssh.conf
 
 #
 # install/uninstall sections
 #
 
 %post
-/usr/bin/getent passwd globus-mapping || /usr/sbin/useradd -r -s /sbin/nologin globus-mapping
-/usr/sbin/semodule -i %{_docdir}/%{name}-%{version}/globus-ssh.pp
+/usr/bin/getent passwd globus-mapping && /usr/sbin/userdel globus-mapping
+/usr/sbin/semodule --list | grep globus-ssh > /dev/null && /usr/sbin/semodule -r globus-ssh
+
+/usr/bin/getent passwd oauth-ssh || /usr/sbin/useradd -r -s /sbin/nologin oauth-ssh
+/usr/sbin/semodule -i %{_docdir}/%{name}-%{version}/oauth-ssh.pp
 
 %postun
 if [ $1 -ne 1 ] ; then
-    /usr/sbin/userdel globus-mapping
-    /usr/sbin/semodule -r globus-ssh
+    /usr/sbin/userdel oauth-ssh
+    /usr/sbin/semodule -r oauth-ssh
 fi
 
 #
@@ -139,5 +140,5 @@ rm -rf $RPM_BUILD_ROOT
 * Wed Oct 17 2018 Globus <support@globus.org> - 0.3
 - Added Support for TXT-record FQDN validation
 
-* Thu Oct 16 2018 Globus <support@globus.org> - 0.2
+* Tue Oct 16 2018 Globus <support@globus.org> - 0.2
 - Added globus-ssh-config for registering DNS with Globus Auth

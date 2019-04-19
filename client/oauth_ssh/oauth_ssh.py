@@ -13,8 +13,8 @@ from .token import Token
 from .constants import *
 from .account_map import AccountMap
 from .ssh_service import SSHService
-from .exceptions import GlobusSSHError
-from .globus_ssh_token import find_access_token
+from .exceptions import OAuthSSHError
+from .oauth_ssh_token import find_access_token
 
 #####################################
 #
@@ -27,7 +27,7 @@ def handle_errors(func):
     def wrapper(*args, **kw):
         try:
             func(*args, **kw)
-        except GlobusSSHError as e:
+        except OAuthSSHError as e:
             print(e)
             sys.exit(1)
         sys.exit(0)
@@ -40,17 +40,17 @@ def handle_errors(func):
 #
 #####################################
 # click would not handle:
-    #  globus-ssh -l <account> -p <port> ssh.foo.com ls -l /
+    #  oauth-ssh -l <account> -p <port> ssh.foo.com ls -l /
 # so I rolled my own
 
 def show_help():
-    print("Usage: globus-ssh [OPTIONS] [user@]FQDN COMMAND [ARGS]...")
-    print()
+    print("Usage: oauth-ssh [OPTIONS] [user@]FQDN COMMAND [ARGS]...")
+    print("")
     print("Options:")
-    print("-l <user> User to log in as on the remote machine.")
-    print("-p <port> Port the SSH services runs on. Defaults to 22.")
-    print("--help    Show this message and exit.")
-    print()
+    print("  -l <user> User to log in as on the remote machine.")
+    print("  -p <port> Port the SSH services runs on. Defaults to 22.")
+    print("  --help    Show this message and exit.")
+    print("")
 
 def parse_args():
     args = sys.argv[1:]
@@ -102,7 +102,7 @@ def parse_args():
 #####################################
 
 @handle_errors
-def globus_ssh():
+def oauth_ssh():
     account, port, acct_fqdn, command = parse_args()
 
     fqdn = acct_fqdn.split('@')[-1]

@@ -1,13 +1,13 @@
 # Client-Side Installation
 
-The `globus-ssh` client is an end-user package that provides
-federated-identity authorization for SSH. By leveraging Globus Auth and
-the `globus-ssh` product, users can authenticate and authorize to
-`globus-ssh` enabled SSH services using their preferred linked identity.
-It is comprised of two programs: `globus-ssh-token` which performs OAuth
-token management and `globus-ssh` provides a simple SSH v2 client.
+The `oauth-ssh` client is an end-user package that provides
+federated-identity authorization for SSH. By leveraging the `oauth-ssh`
+product, users can authenticate and authorize to `oauth-ssh` enabled SSH
+services using their preferred linked identity. It is comprised of two
+programs: `oauth-ssh-token` which performs OAuth token management and
+`oauth-ssh` provides a simple SSH v2 client.
 
-It is available as a PyPi package at <https://pypi.org/project/globus-ssh/>.
+It is available as a PyPi package at <https://pypi.org/project/oauth-ssh/>.
 
 ## Supported Platforms
 
@@ -17,13 +17,13 @@ platform.
 
 ## Supported Python Versions
 
-`globus-ssh` is compatible with Python 2.7+ and 3.6+.
+`oauth-ssh` is compatible with Python 2.7+ and 3.6+.
 
 ## Prerequisites
 
 ### Pip
 
-`pip` is the Python package manager and is required for `globus-ssh`
+`pip` is the Python package manager and is required for `oauth-ssh`
 installation. Steps for installation depend on whether you have
 administrative access on the target system. Details are outlined below.
 
@@ -58,9 +58,9 @@ order:
 
 ## Installation
 
-These steps allow a user to install `globus-ssh` into their home
+These steps allow a user to install `oauth-ssh` into their home
 directory which is necessary when you do not have administrative access
-to the target machine. This installation makes `globus-ssh` available
+to the target machine. This installation makes `oauth-ssh` available
 only to the current user.
 
 On **Linux** and **macOS**, you need to make sure that the install
@@ -71,23 +71,23 @@ the following commands:
     $ echo "export PATH" >> ~/.bash_profile
     $ .  ~/.bash_profile
 
-And finally, install the `globus-ssh` client into your local target
+And finally, install the `oauth-ssh` client into your local target
 directory:
 
-    $ pip install --user globus-ssh
+    $ pip install --user oauth-ssh
 
 ## Usage Overview
 
-The `globus-ssh` client is comprised of two components: `globus-ssh`
+The `oauth-ssh` client is comprised of two components: `oauth-ssh`
 which is a basic Python-based SSH client implementation which supports
-Globus Auth token authentication and `globus-ssh-token` which provides
-token management routines. You should use `globus-ssh-token` to enable
-SSH access to a remote host and then use `globus-ssh` for accessing that
+OAuth token authentication and `oauth-ssh-token` which provides
+token management routines. You should use `oauth-ssh-token` to enable
+SSH access to a remote host and then use `oauth-ssh` for accessing that
 host.
 
-### globus-ssh-token
+### oauth-ssh-token
 
-    Usage: globus-ssh-token [OPTIONS] COMMAND [ARGS]
+    Usage: oauth-ssh-token [OPTIONS] COMMAND [ARGS]
 
     Options:
        --help     Show this message and exit.
@@ -97,9 +97,9 @@ host.
        revoke     Revoke the access and refresh tokens
        show       Display stored details about FQDN
 
-### globus-ssh
+### oauth-ssh
 
-    Usage: globus-ssh [OPTIONS] [user@]FQDN COMMAND [ARGS]
+    Usage: oauth-ssh [OPTIONS] [user@]FQDN COMMAND [ARGS]
 
     Options:
        -l <user> User to log in as on the remote machine
@@ -107,7 +107,7 @@ host.
 
 ## Examples
 
-### Authorize globus-ssh to Access a Host
+### Authorize oauth-ssh to Access a Host
 
 Before connecting to a SSH service, you must authorize this client in
 order to obtain a token for use with the SSH authentication process.
@@ -116,19 +116,18 @@ This step is only required once per SSH service you plan to connect to.
 Use the `authorize` command to authorize the client and retrieve an
 access token. Substitute your host in place of ssh.demo.globus.org:
 
-    $ globus-ssh-token authorize ssh.demo.globus.org
+    $ oauth-ssh-token authorize ssh.demo.globus.org
     Please go to this URL and login: https://auth.globus.org/v2/oauth2/authoriz
     e?code_challenge=nyK-0n6r2IiGajKe8WxgEw6x-1o6jaz4EYe1hXz0yP0&state=_default
     &redirect_uri=https%3A%2F%2Fauth.globus.org%2Fv2%2Fweb%2Fauth-code&prefill_
-    named_grant=SSH+Client+with+Globus+Auth+%28Demo%29&response_type=code&clien
-    t_id=892ee39b-545a-4505-965a-cff0c96f4e74&scope=https%3A%2F%2Fauth.globus.o
-    rg%2Fscopes%2Fssh.demo.globus.org%2Fssh&code_challenge_method=S256&access_t
-    ype=offline
+    named_grant=OAuth+SSH+Client+%28Demo%29&response_type=code&client_id=892ee3
+    9b-545a-4505-965a-cff0c96f4e74&scope=https%3A%2F%2Fauth.globus.org%2Fscopes
+    %2Fssh.demo.globus.org%2Fssh&code_challenge_method=S256&access_type=offline
     Please enter the code you get after login here:
 
 Cut-n-paste the URL given in the output of the `authorize` command to
 perform the authorization. Paste the authorization code provided by on
-the webpage into the prompt of the `globus-ssh-token` command.
+the webpage into the prompt of the `oauth-ssh-token` command.
 
     Please enter the code you get after login here: UDuEvPPoK0lkfig1Cklr8Nb8L4vXfx
 
@@ -137,20 +136,20 @@ the webpage into the prompt of the `globus-ssh-token` command.
 > The authorization URL and code will change with every instantiation of
 > the `authorize` command.
 
-### Using globus-ssh to Access a Host
+### Using oauth-ssh to Access a Host
 
-Use `globus-ssh` to access the host that we just authorized:
+Use `oauth-ssh` to access the host that we just authorized:
 
-    $ globus-ssh ssh.demo.globus.org
+    $ oauth-ssh ssh.demo.globus.org
     Last login: Tue Mar 5 22:52:18 UTC 2019 
     [<johndoe@ssh.demo.globus.org> ~]$
 
 ### Choosing the Remote User Account
 
-When connecting to a remote SSH service, `globus-ssh` will try to
+When connecting to a remote SSH service, `oauth-ssh` will try to
 simplify account selection. For example, if the remote SSH service is
 configured to only allow your linked identities to log in as user
-`janedoe`, `globus-ssh` will automatically select `janedoe` as the
+`janedoe`, `oauth-ssh` will automatically select `janedoe` as the
 target remote account unless you explicitly request a different account
 with the command line options `-l <user>` or `user@fqdn`. Account
 selection is performed in the following order of precedence:
@@ -165,36 +164,36 @@ selection is performed in the following order of precedence:
 4.  Your only permitted remote account on the SSH service, if there is
     only one permitted account for your linked identities.
 
-If `globus-ssh` is unable to select a remote account from this ordering,
+If `oauth-ssh` is unable to select a remote account from this ordering,
 for example if you have multiple accounts permitted by the remote
 service and none of those accounts match you current username, then you
 must specify your account on the command line using `-l <user>` or
 `user@fqdn`. In order to assist you with account selection,
-`globus-ssh-token` provides the `show accounts` option which will list
+`oauth-ssh-token` provides the `show accounts` option which will list
 all accounts associated with your linked identities permitted on the
 remote SSH service:
 
-    $ globus-ssh-token show accounts ssh.demo.globus.org
+    $ oauth-ssh-token show accounts ssh.demo.globus.org
     permitted_accounts: ['johndoe', 'jd']
 
 #### Using Third-Party SSH Clients
 
-In order to support third-party clients, `globus-ssh` provides the
+In order to support third-party clients, `oauth-ssh` provides the
 command `show token` which can be used to display a useable access token
 which can be cut-n-paste into another SSH client application. In order
 to display the access token, first `authorize` then:
 
-    $ globus-ssh-token show token ssh.demo.globus.org
+    $ oauth-ssh-token show token ssh.demo.globus.org
     AdfjklweidAADDdjee5ddSSD44DccgglksiejklsdDDD44
 
-Then paste this access token at the Globus Auth prompt:
+Then paste this access token at the token prompt:
 
     $ ssh ssh.demo.globus.org
-    Enter your Globus Auth Token: AdfjklweidAADDdjee5ddSSD44DccgglksiejklsdDDD44
+    Enter your OAuth Token: AdfjklweidAADDdjee5ddSSD44DccgglksiejklsdDDD44
     Last login: Tue Mar 5 22:52:18 UTC 2019
     [johndoe@ssh.demo.globus.org ~]$
 
-#### Authorize globus-ssh with a Specific Linked Identity
+#### Authorize oauth-ssh with a Specific Linked Identity
 
 SSH service administrators may require that you authenticate with a
 specific linked identity in order to meet security requirements at their
@@ -203,20 +202,19 @@ a linked identity associated with one of the identity providers required
 by the site. For example, the site `ssh.demo.globus.org` below requires
 that you authorize with an identity from either xsede.org or globus.org:
 
-    $ globus-ssh-token authorize ssh.demo.globus.org
+    $ oauth-ssh-token authorize ssh.demo.globus.org
     Use --identity to specify an account from one of ['xsede.org', 'globus.org']
 
 You will need to reissue the `authorize` command and specify an identity
 of yours from one of the listed providers:
 
-    $ globus-ssh-token authorize --identity johndoe@xsede.org ssh.demo.globus.org
+    $ oauth-ssh-token authorize --identity johndoe@xsede.org ssh.demo.globus.org
     Please go to this URL and login: https://auth.globus.org/v2/oauth2/authorize
     ?code_challenge=nyK-0n6r2IiGajKe8WxgEw6x-1o6jaz4EYe1hXz0yP0&state=_default&r
     edirect_uri=https%3A%2F%2Fauth.globus.org%2Fv2%2Fweb%2Fauth-code&prefill_nam
-    ed_grant=SSH+Client+with+Globus+Auth+%28Demo%29&response_type=code&client_id
-    =892ee39b-545a-4505-965a-cff0c96f4e74&scope=https%3A%2F%2Fauth.globus.org%2F
-    scopes%2Fssh.demo.globus.org%2Fssh&code_challenge_method=S256&access_type=of
-    fline
+    ed_grant=OAuth+SSH+Client+%28Demo%29&response_type=code&client_id=892ee39b-5
+    45a-4505-965a-cff0c96f4e74&scope=https%3A%2F%2Fauth.globus.org%2Fscopes%2Fss
+    h.demo.globus.org%2Fssh&code_challenge_method=S256&access_type=offline
     Please enter the code you get after login here:
 
 This may require you to reauthenticate as the specified identity, this
@@ -232,12 +230,12 @@ SSH service admistrators may require that you reauthenticate on a
 particular cadence in order to meet their site’s security policy. For
 example the site `ssh.demo.globus.org` below requires that the user
 reauthenticate with the identity provider every four hours. When this
-timeout occurs, `globus-ssh` will request that you reauthorize access
+timeout occurs, `oauth-ssh` will request that you reauthorize access
 for that host:
 
-    $ globus-ssh ssh.demo.globus.org
+    $ oauth-ssh ssh.demo.globus.org
     The access token no longer meets this site’s security policy requirements.
-    Use `globus-ssh-token authorize ssh.demo.globus.org`
+    Use `oauth-ssh-token authorize ssh.demo.globus.org`
 
 > **Note**
 > 
@@ -246,12 +244,12 @@ for that host:
 
 #### Revoking SSH Access to a Host
 
-If you no longer wish to allow the local `globus-ssh` client to access a
+If you no longer wish to allow the local `oauth-ssh` client to access a
 particular host, for example if you are going to leave the system
 unintended, you can issue the `revoke` command which destroys the access
 token and refresh token associated with that host:
 
-    $ globus-ssh-token revoke ssh.demo.globus.org
+    $ oauth-ssh-token revoke ssh.demo.globus.org
 
 Further access to ssh.demo.globus.org will require you to rerun the
 `authorize` command.
@@ -265,7 +263,7 @@ make {develop|test|package} [PYTHON_VERSION=<x.y.z>]
   package - prepare a pypi package ready for upload
   
   PYTHON_VERSION is optional. When it is not given, virtualenv and the default
-  system python installation is used to install globus-ssh to 'venv_system/'.
+  system python installation is used to install oauth-ssh to 'venv_system/'.
   When PYTHON_VERSION is given, pyenv and pyenv-virtualenv are used to build
   a virtual environment against the given python version. You must choose a 
   python version supported by pyenv.
@@ -280,8 +278,8 @@ sudo yum install -y python2-pip
 Installation for general development against the system default python:
 ```shell
 sudo pip install virtualenv  
-git clone git@github.com:globusonline/globus-ssh.git  
-cd globus-ssh  
+git clone git@github.com:xsede/oauth-ssh.git  
+cd oauth-ssh  
 make develop
 . ./venv_system/bin/activate  
 ```
@@ -291,14 +289,30 @@ git clone https://github.com/pyenv/pyenv.git
 export PYENV_ROOT=`pwd`/pyenv
 export PATH="${PYENV_ROOT}/bin:$PATH"
 git clone https://github.com/pyenv/pyenv-virtualenv.git ${PYENV_ROOT}/plugins/pyenv-virtualenv
-git clone git@github.com:globusonline/globus-ssh.git  
-cd globus-ssh
+git clone git@github.com:xsede/oauth-ssh.git  
+cd oauth-ssh/client
 make develop PYTHON_VERSION=x.y.z
 . .${PYENV_ROOT}/venv_x.y.z/bin/activate  
 ```
 PyPi package creation:
 ```shell
 sudo pip install virtualenv  
-git clone git@github.com:globusonline/globus-ssh.git  
-cd globus-ssh  
+git clone git@github.com:xsede/oauth-ssh.git  
+cd oauth-ssh/client
 make package
+```
+
+**Code Submissions**
+1. Submit an issue with the [OAuth SSH Repo](https://github.com/xsede/oauth-ssh/issues).
+2. Create a fork of the official repository for all work.
+3. Use the branch naming scheme `issue/<issue_id>` for all work related to the issue.
+4. Submit source updates to your fork.
+5. Squash all commits into a single commit with log message `Fixes #<issue_id>`. Add additoinal information as applicable but try to keep details for the change within the issue.
+6. Prior to submitting the pull request:
+* Rebase your issue branch on top of the official repository's master branch.
+* Run build_rpm in the top level to make sure it still functions.
+* Run `make test` to verify that all tests still pass.
+  * Add new tests for new features as necessary.
+7. Create a pull request. Make sure the subject includes `Closes #<issue_id>` in the description.
+8. Submit the pull request.
+9. When approving the pull request, use `rebase and commit`. Reject any pull requests that can't merge cleanly.

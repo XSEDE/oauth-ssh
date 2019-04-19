@@ -2,14 +2,14 @@ import sys
 from setuptools import setup
 
 setup(
-    name='globus_ssh',
-    version=0.5,
-    description='SSH with Globus Auth',
+    name='oauth_ssh',
+    version=0.9,
+    description='SSH with OAuth Tokens',
     long_description=open("README.rst").read(),
-    url='https://github.com/globus/globus-ssh',
-    author="Globus Team",
-    author_email='support@globus.org',
-    packages=['globus_ssh'],
+    url='https://github.com/xsede/oauth-ssh',
+    author="Jason Alt",
+    author_email='jasonalt@gmail.com',
+    packages=['oauth_ssh'],
 
     # Only enforced with setuptools 24.2.0+ and pip 9.0.0+
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*',
@@ -26,11 +26,11 @@ setup(
 
     entry_points='''
         [console_scripts]
-        globus-ssh=globus_ssh.globus_ssh:globus_ssh
-        globus-ssh-token=globus_ssh.globus_ssh_token:globus_ssh_token
+        oauth-ssh=oauth_ssh.oauth_ssh:oauth_ssh
+        oauth-ssh-token=oauth_ssh.oauth_ssh_token:oauth_ssh_token
     ''',
 
-    keywords=["globus", "ssh"],
+    keywords=["oauth", "ssh"],
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: End Users/Desktop",
