@@ -18,6 +18,8 @@ authenticated to an identity provider within a recent timeframe or (3)
 both options 1&2. This gives the service administrator a higher
 assurance that the connecting user is infact the authorized user.
 
+Currently this code works against the Globus Auth authorization service.
+
 ## Supported Linux Distributions
 
 The oauth-ssh server packages are currently supported on the following

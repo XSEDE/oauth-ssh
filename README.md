@@ -21,3 +21,4 @@ The PyPi project can be found at: https://pypi.org/project/oauth-ssh/.
 The server-side components are located in [the server subdirectory](server/).
 The client-side components are located in [the client subdirectory](client/).
 
+Currently this code works against the Globus Auth authorization service.
