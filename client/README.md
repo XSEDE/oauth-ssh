@@ -9,6 +9,8 @@ programs: `oauth-ssh-token` which performs OAuth token management and
 
 It is available as a PyPi package at <https://pypi.org/project/oauth-ssh/>.
 
+Currently this code works against the Globus Auth authorization service.
+
 ## Supported Platforms
 
 This documentation describes installation on enterprise linux and it’s
