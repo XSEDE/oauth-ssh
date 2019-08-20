@@ -87,12 +87,15 @@ def entry_point(ctx, client_id, client_secret):
 
 
 def print_friendly_auth_err_msg(auth_reply):
-    errors = auth_reply.json()['errors'][0]
+    try:
+        errors = auth_reply.json()['errors'][0]
 
-    if "code" in errors and errors['code'] == "UNAUTHORIZED":
-        click.echo("Authorization failed. Please check your client ID and "
-                   "secret and try again.")
-        return
+        if "code" in errors and errors['code'] == "UNAUTHORIZED":
+            click.echo("Authorization failed. Please check your client ID and "
+                       "secret and try again.")
+            return
+    except:
+        pass
 
     click.echo(auth_reply.text)
 
