@@ -22,7 +22,7 @@ if GLOBUS_SSH_ENVIRONMENT in GLOBUS_AUTH_ENVS:
 SSH_SCOPE_SUFFIX = "ssh"
 SSH_SCOPE_FORMAT = "https://auth.globus.org/scopes/%s/" + SSH_SCOPE_SUFFIX
 
-CONFIG_FILE = '/etc/globus/globus-ssh.conf'
+CONFIG_FILE = '/etc/oauth_ssh/globus-ssh.conf'
 CONFIG_KEY_ID = 'client_id'
 CONFIG_KEY_SECRET = 'client_secret'
 
