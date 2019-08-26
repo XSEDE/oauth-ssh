@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='oauth_ssh',
-    version=0.9,
+    version='0.10',
     description='SSH with OAuth Tokens',
     long_description=open("README.rst").read(),
     url='https://github.com/xsede/oauth-ssh',
@@ -17,11 +17,8 @@ setup(
     install_requires=[
         'requests>=2.21.0,<3.0',
         'click>=6.7,<7.0',
-        # paramiko 2.4.2 plus newer cryptography results in unnecessary
-        # deprecation warnings. paramiko recommends downgrading cryptography
-        # until the new verison of paramiko (>2.4.2) is available.
-        'cryptography==2.4.2',
-        'paramiko>=2.4.2',
+        'cryptography==2.7',
+        'paramiko==2.6.0',
     ],
 
     entry_points='''
