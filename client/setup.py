@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='oauth_ssh',
-    version='0.10',
+    version='0.11',
     description='SSH with OAuth Tokens',
     long_description=open("README.rst").read(),
     url='https://github.com/xsede/oauth-ssh',
