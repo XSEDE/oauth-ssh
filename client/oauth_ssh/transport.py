@@ -120,7 +120,12 @@ class Transport(paramiko.transport.Transport):
         self.start_client(timeout=15)
         remote_host_key = self.get_remote_server_key()
         known_hosts_file = os.path.expanduser('~/.ssh/known_hosts')
-        known_host_keys = paramiko.hostkeys.HostKeys(filename=known_hosts_file)
+
+        # Treat missing/bad hosts files as unknown host
+        try:
+            known_host_keys = paramiko.hostkeys.HostKeys(filename=known_hosts_file)
+        except:
+            known_host_keys = paramiko.hostkeys.HostKeys()
 
         if known_host_keys.check(fqdn, remote_host_key) is False:
             print("The authenticity of host '" \
@@ -154,7 +159,11 @@ class Transport(paramiko.transport.Transport):
             known_host_keys.add(fqdn,
                                 remote_host_key.get_name(),
                                 remote_host_key)
-            known_host_keys.save(known_hosts_file)
+            # Ignore host key file issues
+            try:
+                known_host_keys.save(known_hosts_file)
+            except:
+                pass
 
     def send_command(self, command, account):
         handler = CmdInjectHandler(command)
