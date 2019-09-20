@@ -64,8 +64,8 @@ MISSING_OPT_ERR_MSG = (
 
 def entry_point(ctx, client_id, client_secret):
     """This script allows you to register a fully qualified domain name (FQDN)
-       for your SSH with Globus Auth service so that users of the globus-ssh
-       client can access it as 'globus-ssh <FQDN>'.
+       for your SSH with Globus Auth service so that users of the oauth-ssh
+       client can access it as 'oauth-ssh <FQDN>'.
     """
     ctx.obj = {}
 

@@ -1,4 +1,4 @@
-from globus_ssh.template import Template
+from oauth_ssh.template import Template
 
 def raises_error(F, *args, **kw):
     try:

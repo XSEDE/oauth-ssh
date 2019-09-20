@@ -1,4 +1,4 @@
-from globus_ssh.token import Token
+from oauth_ssh.token import Token
 
 class TestToken():
     def test_expires_in(self):

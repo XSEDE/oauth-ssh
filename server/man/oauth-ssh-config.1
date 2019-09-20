@@ -1,12 +1,12 @@
-.TH man 1 "23 10 2018" "1.0" "globus-ssh-config man page"
+.TH man 1 "23 10 2018" "1.0" "oauth-ssh-config man page"
 .SH NAME
-globus-ssh-config - register a FQDN with your SSH service Globus Auth client
+oauth-ssh-config - register a FQDN with your SSH service Globus Auth client
 .SH SYNOPSIS
-globus-ssh-config [--client_id <id>] [--client_secret <secret>] register <fqdn>
+oauth-ssh-config [--client_id <id>] [--client_secret <secret>] register <fqdn>
 .SH DESCRIPTION
 This script allows you to register a fully qualified domain name <fqdn>
-with your SSH for Globus Auth service so that users of the globus-ssh
-client can access it as 'globus-ssh <FQDN>'. Without this association, users
+with your SSH for Globus Auth service so that users of the oauth-ssh
+client can access it as 'oauth-ssh <FQDN>'. Without this association, users
 will be unable to use Globus Auth to authorize to your SSH service.
 
 During the registration process, Globus Auth will validate your ownership of
@@ -23,11 +23,11 @@ registered at https://developers.globus.org/. Alternatively, this value can
 be specified in the
 .I CLIENT_ID
 environment variable. If neither value is available,
-.I globus-ssh-config
+.I oauth-ssh-config
 will retrieve the value of 
 .I auth_client_id
 from 
-.I /etc/globus/globus-ssh.conf
+.I /etc/oauth-ssh/globus-ssh.conf
 
 .IP "--client_secret <secret>"
 .I <id>
@@ -36,11 +36,11 @@ registered at https://developers.globus.org/. Alternatively, this value can
 be specified in the
 .I CLIENT_SECRET
 environment variable. If neither value is available,
-.I globus-ssh-config
+.I oauth-ssh-config
 will retrieve the value of 
 .I auth_client_secret
 from 
-.I /etc/globus/globus-ssh.conf
+.I /etc/oauth-ssh/globus-ssh.conf
 
 .IP "register <fqdn>"
 Register 
@@ -49,7 +49,7 @@ with Globus Auth and associate
 .I <fqdn>
 with the Globus Auth client specied with
 .I --client_id
-allowing authorized users for globus-ssh to access your SSH service.
+allowing authorized users for oauth-ssh to access your SSH service.
 
 .SH EXIT_VALUES
 On success, the script will print "Success" and exit with a value of 0. On
@@ -64,7 +64,7 @@ Alternative to using --client_id command line option.
 Alternative to using --client_secret command line option.
 
 .SH FILES
-.IP /etc/globus/globus-ssh.conf
+.IP /etc/oauth-ssh/globus-ssh.conf
 The values of 
 .I auth_client_id
 and
@@ -78,12 +78,12 @@ respectively when neither the options nor the environment variables are used.
 .SH EXAMPLES
 Associate client 779714b7-d1c1-c3f4b536f2a5 with ssh.example.com:
 
-    # globus-ssh-config --client_id 779714b7-d1c1-c3f4b536f2a5 --client_secret gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= register ssh.example.com
+    # oauth-ssh-config --client_id 779714b7-d1c1-c3f4b536f2a5 --client_secret gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= register ssh.example.com
       Success
     
 Same example but using alternative environment variables:
 
-    # CLIENT_ID=779714b7-d1c1-c3f4b536f2a5 CLIENT_SECRET=gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= globus-ssh-config register ssh.example.com
+    # CLIENT_ID=779714b7-d1c1-c3f4b536f2a5 CLIENT_SECRET=gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= oauth-ssh-config register ssh.example.com
       Success
 .SH AUTHOR
 Globus Support <support@globus.org>
