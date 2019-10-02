@@ -36,7 +36,12 @@ CMOCKA_BUILD:=(mkdir $(CMOCKA_SRC)/build;  \
 
 CONFIGURE:=PKG_CONFIG_PATH=$(CMOCKA_PRE)/lib64/pkgconfig/ ./configure
 
-common:
+all: help
+
+help:
+	@echo "Usage: make [develop|release]"
+
+setup:
 	[ -z "$(MISSING_PKGS_PRE)" ] || sudo yum install -y $(MISSING_PKGS_PRE)
 	[ -z "$(MISSING_PKGS)" ] || sudo yum install -y $(MISSING_PKGS)
 	[ -f $(CMOCKA_TAR) ] || curl -o $(CMOCKA_TAR) $(CMOCKA_URL)
@@ -47,11 +52,11 @@ common:
 	make
 	#LD_LIBRARY_PATH=$(CMOCKA_PRE)/lib64:$(PWD)/src/pam/.libs make check
 
-debug: CFLAGS='-DDEBUG -Wall -ggdb3'
-debug: common
+develop: CFLAGS='-DDEBUG -Wall -ggdb3'
+develop: setup
 
 release: CFLAGS='-O3'
-release: common
+release: setup
 	make dist
 	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
 	cp oauth_ssh-*.tar.gz SOURCES
