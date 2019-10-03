@@ -44,7 +44,7 @@ _add_acct_mapping(struct account_map    ** map,
 static char *
 _acct_from_username(const char * username)
 {
-	char * ptr = strrchr(username, '@');
+	char * ptr = strchr(username, '@');
 	ASSERT(ptr);
 	char * acct = calloc(ptr - username + 1, sizeof(char));
 	strncpy(acct, username, ptr - username);
@@ -54,11 +54,11 @@ _acct_from_username(const char * username)
 static bool
 _id_matches_suffix(const struct identity * id, const char * suffix)
 {
-	if (strlen(id->username) < strlen(suffix))
+	char * ptr = strchr(id->username, '@');
+	if (!ptr)
 		return false;
 
-	int offset = strlen(id->username) - strlen(suffix);
-	return (strcmp(id->username + offset, suffix) == 0);
+	return (strcmp(ptr+1, suffix) == 0);
 }
 
 /*

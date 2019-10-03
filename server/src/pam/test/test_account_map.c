@@ -93,6 +93,12 @@ struct identities identities =
 				//"Example Company",
 				//"johndoe@example.com"
 			},
+			&(struct identity) {
+				"doe@abc.com@accounts.google.org",
+				"used",
+				"2dfa2043-00ad-43b6-b93b-4c39baa00bdd",
+				"9e484f7f-a54f-44cb-a8c6-a1f57462b863"
+			},
 			NULL
 		}
 	};
@@ -112,7 +118,7 @@ test_no_map_if_no_suffix_match(void ** state)
 }
 
 void
-test_map_on_suffix_match(void ** state)
+test_suffix_match_globusid(void ** state)
 {
 	struct config config = {.idp_suffix = "globusid.org", .map_files = NULL};
 	struct account_map * map = account_map_init(&config, &identities);
@@ -122,6 +128,22 @@ test_map_on_suffix_match(void ** state)
 	assert_string_equal(map->accounts[0], "jane");
 	assert_null(map->accounts[1]);
 	assert_null(map->next);
+	account_map_fini(map);
+}
+
+void
+test_suffix_match_google(void ** state)
+{
+	struct config config = {.idp_suffix = "abc.com@accounts.google.org", .map_files = NULL};
+	struct account_map * map = account_map_init(&config, &identities);
+	assert_true(is_acct_in_map(map, "doe"));
+	assert_false(is_acct_in_map(map, "doe@abc.com"));
+	account_map_fini(map);
+
+	config = (struct config){.idp_suffix = "accounts.google.org", .map_files = NULL};
+	map = account_map_init(&config, &identities);
+	assert_false(is_acct_in_map(map, "doe"));
+	assert_false(is_acct_in_map(map, "doe@abc.com"));
 	account_map_fini(map);
 }
 
@@ -301,23 +323,37 @@ int
 main()
 {
 	const struct CMUnitTest tests[] = {
-		{"no map if no config",        test_no_map_if_no_config},
-		{"no map if no suffix match",  test_no_map_if_no_suffix_match},
-		{"map on suffix match",        test_map_on_suffix_match},
-		{"no map if no map file",      test_no_map_if_no_map_file},
-		{"id match in map file",       test_id_match_in_map_file},
-		{"username match in map file", test_username_match_in_map_file},
-//		{"add acct to null map",       test_add_acct_null_map},
-//		{"add acct w/o matching map",  test_add_acct_wo_matching_map},
-//		{"add acct to existing map",   test_add_acct_to_existing_map},
-//		{"add acct not unique",        test_add_acct_not_unique},
-//		{"acct from username",         test_acct_from_username},
-//		{"suffix match",               test_suffix_match},
-//		{"suffix mismatch",            test_suffix_mismatch},
-		{"acct not in null map",       test_acct_not_in_null_map},
-		{"acct not in map",            test_acct_not_in_map},
-		{"acct in map",                test_acct_in_map},
+		{"no map if no config",            test_no_map_if_no_config},
+		{"no map if no suffix match",      test_no_map_if_no_suffix_match},
+		{"map on suffix match (globusid)", test_suffix_match_globusid},
+		{"map on suffix match (google)",   test_suffix_match_google},
+		{"no map if no map file",          test_no_map_if_no_map_file},
+		{"id match in map file",           test_id_match_in_map_file},
+		{"username match in map file",     test_username_match_in_map_file},
+//		{"add acct to null map",           test_add_acct_null_map},
+//		{"add acct w/o matching map",      test_add_acct_wo_matching_map},
+//		{"add acct to existing map",       test_add_acct_to_existing_map},
+//		{"add acct not unique",            test_add_acct_not_unique},
+//		{"acct from username",             test_acct_from_username},
+//		{"suffix match",                   test_suffix_match},
+//		{"suffix mismatch",                test_suffix_mismatch},
+		{"acct not in null map",           test_acct_not_in_null_map},
+		{"acct not in map",                test_acct_not_in_map},
+		{"acct in map",                    test_acct_in_map},
 	};
 
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }
+
+//struct account_map *
+//account_map_init(const struct config *, const struct identities *);
+
+//void
+//account_map_fini(struct account_map *);
+
+//bool
+//is_acct_in_map(const struct account_map * map, const char * acct);
+
+//const char *
+//acct_to_username(const struct account_map * map, const char * acct);
+
