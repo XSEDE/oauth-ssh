@@ -10,7 +10,7 @@ TESTS = test_account_map \
 check_PROGRAMS= $(TESTS)
 
 AM_CPPFLAGS = $(CMOCKA_CFLAGS) -I$(srcdir)/..
-AM_LDFLAGS=-rdynamic # so we can override internal symbols
+AM_LDFLAGS= -Wl,-rpath ../.libs -rdynamic # so we can override internal symbols
 LDADD=$(CMOCKA_LIBS) ../.libs/pam_oauth_ssh.so -ldl -lpthread -lpam
 
 COMMON_SOURCES = debug.h \

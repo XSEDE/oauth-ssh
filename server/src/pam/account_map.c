@@ -71,16 +71,16 @@ _build_map_file_account_map(const struct config     * config,
 {
 	struct account_map * map = NULL;
 
-	for (int i = 0; config->map_file && config->map_file[i]; i++)
+	for (int i = 0; config->map_files && config->map_files[i]; i++)
 	{
 		// We want to continue even if a map file is missing or unreadable
 		// to allow users to continue to log in with the mappings available.
-		FILE * fptr = fopen(config->map_file[i], "r");
+		FILE * fptr = fopen(config->map_files[i], "r");
 		if (!fptr)
 		{
 			logger(LOG_TYPE_ERROR,
 			       "Could not open %s: %m",
-			       config->map_file[i]);
+			       config->map_files[i]);
 			continue;
 		}
 

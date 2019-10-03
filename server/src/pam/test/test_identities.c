@@ -23,12 +23,18 @@ const char * jstring =
 "	\"included\": {"
 "		\"identity_providers\": ["
 "			{"
+"				\"domains\": [\"domain1\"],"
 "				\"id\": \"idp1\","
-"				\"name\": \"name1\""
+"				\"alternative_names\": [\"alt1\"],"
+"				\"name\": \"name1\","
+"				\"short_name\": \"short_name1\""
 "			},"
 "			{"
+"				\"domains\": [\"domain2\", \"domain3\"],"
 "				\"id\": \"idp2\","
-"				\"name\": \"name2\""
+"				\"alternative_names\": [\"alt2\"],"
+"				\"name\": \"name2\","
+"				\"short_name\": \"short_name2\""
 "			}"
 "		]"
 "	},"
@@ -58,10 +64,7 @@ const char * jstring =
  *              MOCKS
  *******************************************/
 void
-vsyslog(int priority, const char *format, va_list ap)
-{
-	mock();
-}
+vsyslog(int priority, const char *format, va_list ap) { }
 
 /*******************************************
  *              TESTS

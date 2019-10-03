@@ -12,7 +12,7 @@ struct config {
 	char *  client_id;
 	char *  client_secret;
 	char *  idp_suffix;
-	char ** map_file;
+	char ** map_files;
 
 	// Session support
 	char ** permitted_idps;

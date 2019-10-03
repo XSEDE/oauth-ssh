@@ -143,8 +143,8 @@ parse_file(struct config * config)
         else
         if (strcmp(key, "map_file") == 0)
         {
-            char ** save_ptr = config->map_file;
-            config->map_file = merge_values(config->map_file, values);
+            char ** save_ptr = config->map_files;
+            config->map_files = merge_values(config->map_files, values);
             free_array(save_ptr);
         }
         else
@@ -182,7 +182,7 @@ parse_file(struct config * config)
     if ((status = check_is_set("client_secret", client_secret_set)) == failure)
         goto cleanup;
 
-    if (!config->idp_suffix && !config->map_file)
+    if (!config->idp_suffix && !config->map_files)
     {
         logger(LOG_TYPE_ERROR,
             "At least one of 'idp_suffix' or 'map_file' must be defined in  %s",
@@ -239,7 +239,7 @@ config_fini(struct config * config)
 		free(config->client_id);
 		free(config->client_secret);
 		free(config->idp_suffix);
-		free_array(config->map_file);
+		free_array(config->map_files);
 		free_array(config->permitted_idps);
 		free(config->environment);
 	}
