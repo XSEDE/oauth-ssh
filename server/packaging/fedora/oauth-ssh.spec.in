@@ -131,7 +131,10 @@ rm -rf $RPM_BUILD_ROOT
 # changelog section
 #
 %changelog
-* Fri Mar  8 2019 <support@globus.org> - @PACKAGE_VERSION@
+* Thu Oct  3 2019 <support@globus.org> - 0.10
+- Support for Google IdPs
+
+* Fri Mar  8 2019 <support@globus.org> - 0.5
 - Fixed for optional fields in the identities reply
 
 * Wed Feb 27 2019 Globus <support@globus.org> - 0.4
