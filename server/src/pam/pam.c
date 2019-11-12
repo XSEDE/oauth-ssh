@@ -27,6 +27,7 @@
 #include "logger.h"
 #include "base64.h"
 #include "debug.h" // always last
+#include "scitokens_verify.h"
 
 typedef int pam_status_t;
 
@@ -433,6 +434,17 @@ _cmd_login(pam_handle_t   * pam,
 	*reply = NULL;
 
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
+	
+	//Scitoken
+	if(scitoken_verify(access_token))
+	{
+	logger(LOG_TYPE_INFO,
+	"Scitoken Identity %s authorizing as a local user",
+	access_token);
+	pam_status = PAM_SUCCESS;
+	goto scitokencleanup;
+	}
+	
 	introspect = get_introspect_resource(config, access_token);
 	if (!introspect)
 	{
@@ -497,6 +509,10 @@ cleanup:
 	identities_fini(identities);
 	account_map_fini(account_map);
 	return pam_status;
+
+scitokencleanup:
+    client_fini(client);
+    return pam_status;
 }
 
 
