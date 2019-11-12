@@ -1,9 +1,16 @@
+/*
+ * System includes.
+ */
 #include <stdlib.h>
 #include <string.h>
 
-#include <scitokens-cpp/src/scitokens.h>
-int scitoken_verify(const char * auth_line){
+/*
+ * Local includes.
+ */
+#include "scitokens.h"
 
+int scitoken_verify(const char * auth_line)
+{
     SciToken scitoken;
     char *err_msg;
     const char* listofauthz= "COPY:write DELETE:write GET:read HEAD:read LOCK:write MKCOL:write MOVE:write OPTIONS:read POST:read PROPFIND:write PROPPATCH:write PUT:write TRACE:read UNLOCK:write";
