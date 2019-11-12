@@ -21,6 +21,12 @@ struct config {
 	// 'Hidden' options set in PAM config file
 	char *  environment; // default 'production'
 	bool    debug;
+        
+        // Scitokens
+        char ** scopes;
+        char ** issuers;
+        int numberofissuers;
+
 };
 
 struct config * config_init(int flags, int argc, const char ** argv);

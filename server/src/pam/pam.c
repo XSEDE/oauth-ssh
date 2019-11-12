@@ -436,7 +436,7 @@ _cmd_login(pam_handle_t   * pam,
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
 	
 	//Scitoken
-	if(scitoken_verify(access_token))
+	if(scitoken_verify(access_token,config))
 	{
 	logger(LOG_TYPE_INFO,
 	"Scitoken Identity %s authorizing as a local user",

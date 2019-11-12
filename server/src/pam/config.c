@@ -166,6 +166,29 @@ parse_file(struct config * config)
             timeout_set = true;
         }
         else
+	if (strcmp(key, "scopes") == 0)
+	{
+	      
+	      char ** save_ptr = config->scopes;
+	      config->scopes = merge_values(config->scopes,
+					     values);
+	      free_array(save_ptr);
+	}
+        else
+	if (strcmp(key, "issuers") == 0)
+	{
+	      
+	    char ** save_ptr = config->issuers;  
+            config->issuers = merge_values(config->issuers,
+                                                  values);
+	    free_array(save_ptr);
+	}
+        else
+	if (strcmp(key, "numberofissuers") == 0)
+	{
+	    config->numberofissuers = atol(values[0]);
+	}
+        else
         {
             logger(LOG_TYPE_ERROR,
                    "Unknown directive '%s' in %s",

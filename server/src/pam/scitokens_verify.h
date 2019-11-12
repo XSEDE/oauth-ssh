@@ -8,6 +8,6 @@
 #include <string.h>
 
 int
-scitoken_verify(const char * auth_line);
+scitoken_verify(const char * auth_line, const struct config * config);
 
 #endif /* _SVERIFY_H_ */
