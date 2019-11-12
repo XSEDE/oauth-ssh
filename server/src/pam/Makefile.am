@@ -36,4 +36,7 @@ pam_oauth_ssh_la_SOURCES = account_map.c \
                         parser.c \
                         parser.h \
                         strings.c \
-                        strings.h
+                        strings.h \
+                        scitokens_verify.c \
+                        scitokens_verify.h \
+                        scitokens.h
