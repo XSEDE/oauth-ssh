@@ -3,12 +3,13 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /*
  * Local includes.
  */
 #include "scitokens.h"
-
+#include "logger.h"
 int scitoken_verify(const char * auth_line)
 {
     SciToken scitoken;
