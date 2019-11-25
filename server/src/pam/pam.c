@@ -441,8 +441,8 @@ _cmd_login(pam_handle_t   * pam,
 	if(scitoken_verify(access_token,config,scitoken_requested_user))
 	{
 	      logger(LOG_TYPE_INFO,
-	      "Scitoken Identity %s authorizing as a local user",
-	      scitoken_requested_user);
+	      	     "Scitoken Identity %s authorizing as a local user",
+	      	     scitoken_requested_user);
 	      pam_status = PAM_SUCCESS;
 	      goto scitokencleanup;
 	}
