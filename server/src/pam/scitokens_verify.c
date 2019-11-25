@@ -19,14 +19,14 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if(auth_line == NULL)
     {
         logger(LOG_TYPE_INFO,
-           "Token == NULL");
+        	"Token == NULL");
         return 0;
     }
 
     if(sizeof(config->issuers) == 0)
     {
         logger(LOG_TYPE_INFO,
-	   "No issuers in config");
+		"No issuers in config");
 	return 0;
     }
 
@@ -41,15 +41,15 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if(sizeof(auth_line)>1000*1000)
     {
         logger(LOG_TYPE_INFO,
-        "SciToken too large");
+        	"SciToken too large");
         return 0;
     }
 
     if(scitoken_deserialize(auth_line, &scitoken, (const char * const*)null_ended_list, &err_msg))
     {
         logger(LOG_TYPE_INFO,
-        "Failed to deserialize scitoken %s \n %s + %s",
-	       auth_line,err_msg,config->issuers[0]);
+        	"Failed to deserialize scitoken %s \n %s + %s",
+		auth_line,err_msg,config->issuers[0]);
         free(err_msg);
         return 0;
     }
@@ -58,8 +58,8 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if(scitoken_get_claim_string(scitoken, "iss", &issuer_ptr, &err_msg))
     {
         logger(LOG_TYPE_INFO,
-        "Failed to get claim \n %s",
-        err_msg);
+        	"Failed to get claim \n %s",
+        	err_msg);
         free(err_msg);
         return 0;
     }
@@ -73,7 +73,7 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if (gethostname(hostname, 1024) != 0)
     {
         logger(LOG_TYPE_INFO,
-        "Failed to get hostname");
+        	"Failed to get hostname");
         return 0;
     }
     aud_list[0] = hostname;
@@ -82,8 +82,8 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if (!(enf = enforcer_create(issuer_ptr, aud_list, &err_msg)))
     {
         logger(LOG_TYPE_INFO,
-        "Failed to create enforcer\n %s",
-        err_msg);
+        	"Failed to create enforcer\n %s",
+        	err_msg);
         free(err_msg);
         return 0;
     }
@@ -95,8 +95,8 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     if (enforcer_test(enf, scitoken, &acl, &err_msg))
     {
 	logger(LOG_TYPE_INFO,
-	"Failed enforcer test %s %s %s %s",
-	err_msg, acl.authz, acl.resource,aud_list[0]);
+		"Failed enforcer test %s %s %s %s",
+		err_msg, acl.authz, acl.resource,aud_list[0]);
 	free(err_msg);
         return 0;
     }    
