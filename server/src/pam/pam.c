@@ -436,13 +436,15 @@ _cmd_login(pam_handle_t   * pam,
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
 	
 	//Scitoken
-	if(scitoken_verify(access_token,config))
+        const char * scitoken_requested_user = NULL;
+	pam_get_user(pam, &scitoken_requested_user, NULL);
+	if(scitoken_verify(access_token,config,scitoken_requested_user))
 	{
-	logger(LOG_TYPE_INFO,
-	"Scitoken Identity %s authorizing as a local user",
-	access_token);
-	pam_status = PAM_SUCCESS;
-	goto scitokencleanup;
+	      logger(LOG_TYPE_INFO,
+	      "Scitoken Identity %s authorizing as a local user",
+	      scitoken_requested_user);
+	      pam_status = PAM_SUCCESS;
+	      goto scitokencleanup;
 	}
 	
 	introspect = get_introspect_resource(config, access_token);
