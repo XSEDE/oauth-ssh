@@ -310,6 +310,17 @@ pam_oauth_ssh.so returns the following control values:
 > with the OAuth token prompt in order to avoid disclosing
 > available accounts. This is by design for OpenSSH and is unavoidable.
 
+## SciTokens
+
+To enable SciToken as a verification method:
+1. Compile the module from the source.
+2. Set allowed issuers in oauth-ssh.conf file
+3. Install client-side normally and use SciToken to login. (Both valid SciToken and Globus Auth token will be accepted)
+
+Payload format for Scitokens:
+  "scope": “ssh:username",
+  "aud": "demo.scitokens.org"
+
 ## Developer Overview
 
 **Compiling**
