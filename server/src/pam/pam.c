@@ -438,7 +438,9 @@ _cmd_login(pam_handle_t   * pam,
 	//Scitoken
         const char * scitoken_requested_user = NULL;
 	pam_get_user(pam, &scitoken_requested_user, NULL);
-	if(scitoken_verify(access_token,config,scitoken_requested_user))
+	if((sizeof(config->access_token) != 0) &&\
+	   (strcmp(config->access_token[0],"scitokens") == 0) &&\
+	   scitoken_verify(access_token,config,scitoken_requested_user))
 	{
 	      logger(LOG_TYPE_INFO,
 	      	     "Scitoken Identity %s authorizing as a local user",
@@ -505,15 +507,27 @@ _cmd_login(pam_handle_t   * pam,
 	pam_status = PAM_SUCCESS;
 
 cleanup:
-
 	client_fini(client);
 	introspect_fini(introspect);
 	identities_fini(identities);
 	account_map_fini(account_map);
+	
+	if((sizeof(config->access_token) != 0) &&\
+	   config->access_token[1] &&\
+	   (strcmp(config->access_token[1],"scitokens") == 0) &&\
+	   scitoken_verify(access_token,config,scitoken_requested_user))
+	{
+	      logger(LOG_TYPE_INFO,
+	      	     "Scitoken Identity %s authorizing as a local user",
+	      	     scitoken_requested_user);
+	      pam_status = PAM_SUCCESS;
+	      goto scitokencleanup;
+	}
+
 	return pam_status;
 
 scitokencleanup:
-    client_fini(client);
+
     return pam_status;
 }
 
