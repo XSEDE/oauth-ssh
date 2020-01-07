@@ -315,7 +315,7 @@ pam_oauth_ssh.so returns the following control values:
 To enable SciToken as a verification method:
 1. Install https://github.com/scitokens/scitokens-cpp/releases
 2. Compile the module from the source.
-3. Set allowed issuers in oauth-ssh.conf file
+3. Set allowed "issuers", uncomment "access_token" in oauth-ssh.conf file
 4. Install client-side normally and use SciToken to login. (Both valid SciToken and Globus Auth token will be accepted)
 
 Payload format for Scitokens:
