@@ -27,7 +27,10 @@
 #include "logger.h"
 #include "base64.h"
 #include "debug.h" // always last
+
+#ifdef WITH_SCITOKENS
 #include "scitokens_verify.h"
+#endif // WITH_SCITOKENS
 
 typedef int pam_status_t;
 
@@ -434,7 +437,7 @@ _cmd_login(pam_handle_t   * pam,
 	*reply = NULL;
 
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
-	
+#ifdef WITH_SCITOKENS	
 	//Scitoken
         const char * scitoken_requested_user = NULL;
 	pam_get_user(pam, &scitoken_requested_user, NULL);
@@ -448,6 +451,7 @@ _cmd_login(pam_handle_t   * pam,
 	      pam_status = PAM_SUCCESS;
 	      goto scitokencleanup;
 	}
+#endif // WITH_SCITOKENS
 	
 	introspect = get_introspect_resource(config, access_token);
 	if (!introspect)
@@ -526,9 +530,11 @@ cleanup:
 
 	return pam_status;
 
+#ifdef WITH_SCITOKENS
 scitokencleanup:
-
     return pam_status;
+#endif // WITH_SCITOKENS
+
 }
 
 
