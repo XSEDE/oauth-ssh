@@ -9,7 +9,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES    = pam_oauth_ssh.la
 pam_oauth_ssh_la_LDFLAGS = -module -shared
-pam_oauth_ssh_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread -lSciTokens
+pam_oauth_ssh_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread
 pam_oauth_ssh_la_SOURCES = account_map.c \
                         account_map.h \
                         base64.c \
@@ -36,6 +36,8 @@ pam_oauth_ssh_la_SOURCES = account_map.c \
                         parser.c \
                         parser.h \
                         strings.c \
-                        strings.h \
-                        scitokens_verify.c \
+                        strings.h
+if WITH_SCITOKENS
+pam_oauth_ssh_la_SOURCES += scitokens_verify.c \
                         scitokens_verify.h
+endif

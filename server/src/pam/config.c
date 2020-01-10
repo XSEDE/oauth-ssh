@@ -164,7 +164,8 @@ parse_file(struct config * config)
 
             config->authentication_timeout = atol(values[0]);
             timeout_set = true;
-        }
+        } 
+#ifdef WITH_SCITOKENS
         else
 	if (strcmp(key, "issuers") == 0)
 	{
@@ -183,6 +184,7 @@ parse_file(struct config * config)
                                                   values);
 	    free_array(save_ptr);
 	}
+#endif // WITH_SCITOKENS
         else
         {
             logger(LOG_TYPE_ERROR,
