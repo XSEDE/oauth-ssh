@@ -461,68 +461,68 @@ _cmd_login(pam_handle_t   * pam,
 	      if(strcmp(config->auth_method[i],"globus_auth") == 0)
 	      {
 
-	 introspect = get_introspect_resource(config, access_token);
-	 if (!introspect)
-	 {
-		 *reply = _build_error_reply("UNEXPECTED_ERROR",
-					     "An unexpected error occurred.");
-		 goto cleanup;
-	 }
+		 introspect = get_introspect_resource(config, access_token);
+		 if (!introspect)
+		 {
+			 *reply = _build_error_reply("UNEXPECTED_ERROR",
+						     "An unexpected error occurred.");
+			 goto cleanup;
+		 }
 
-	 client = get_client_resource(config);
-	 if (!client)
-	 {
-		 *reply = _build_error_reply("UNEXPECTED_ERROR",
-					     "An unexpected error occurred.");
-		 goto cleanup;
-	 }
+		 client = get_client_resource(config);
+		 if (!client)
+		 {
+			 *reply = _build_error_reply("UNEXPECTED_ERROR",
+						     "An unexpected error occurred.");
+			 goto cleanup;
+		 }
 
-	 if (!_is_token_valid(introspect, client))
-	 {
-		 *reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
-		 pam_status = PAM_AUTH_ERR;
-		 goto cleanup;
-	 }
+		 if (!_is_token_valid(introspect, client))
+		 {
+			 *reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
+			 pam_status = PAM_AUTH_ERR;
+			 goto cleanup;
+		 }
 
-	 pam_status = PAM_AUTHINFO_UNAVAIL;
-	 identities = get_identities_resource(config, introspect);
-	 if (!identities) goto cleanup;
+		 pam_status = PAM_AUTHINFO_UNAVAIL;
+		 identities = get_identities_resource(config, introspect);
+		 if (!identities) goto cleanup;
 
-	 if (!_is_session_valid(config, introspect, identities))
-	 {
-		 char * tmp = _build_error_reply("SESSION_VIOLATION",
-				 "The access token does not meet session requirements.");
-		 *reply = base64_encode(tmp);
-		 free(tmp);
-		 pam_status = PAM_AUTH_ERR;
-		 goto cleanup;
-	 }
+		 if (!_is_session_valid(config, introspect, identities))
+		 {
+			 char * tmp = _build_error_reply("SESSION_VIOLATION",
+					 "The access token does not meet session requirements.");
+			 *reply = base64_encode(tmp);
+			 free(tmp);
+			 pam_status = PAM_AUTH_ERR;
+			 goto cleanup;
+		 }
 
-	 account_map = account_map_init(config, identities);
+		 account_map = account_map_init(config, identities);
 
-	 const char * requested_user = NULL;
-	 pam_get_user(pam, &requested_user, NULL);
+		 const char * requested_user = NULL;
+		 pam_get_user(pam, &requested_user, NULL);
 
-	 if (!is_acct_in_map(account_map, requested_user))
-	 {
-		 pam_status = PAM_AUTH_ERR;
-		 *reply = _build_error_reply("INVALID_ACCOUNT",
-					     "You cannot use that local account.");
-		 goto cleanup;
-	 }
+		 if (!is_acct_in_map(account_map, requested_user))
+		 {
+			 pam_status = PAM_AUTH_ERR;
+			 *reply = _build_error_reply("INVALID_ACCOUNT",
+						     "You cannot use that local account.");
+			 goto cleanup;
+		 }
 
-	 logger(LOG_TYPE_INFO,
-		"Identity %s authorized as local user %s", 
-		acct_to_username(account_map, requested_user),
-		requested_user);
+		 logger(LOG_TYPE_INFO,
+			"Identity %s authorized as local user %s", 
+			acct_to_username(account_map, requested_user),
+			requested_user);
 
-	 pam_status = PAM_SUCCESS;
-	 break;
+		 pam_status = PAM_SUCCESS;
+		 break;
 cleanup://Terminate verification flow for Globus_auth
-        client_fini(client);
-	introspect_fini(introspect);
-	identities_fini(identities);
-	account_map_fini(account_map);
+		client_fini(client);
+		introspect_fini(introspect);
+		identities_fini(identities);
+		account_map_fini(account_map);
      }	          
   }
 
