@@ -22,9 +22,9 @@ struct config {
 	char *  environment; // default 'production'
 	bool    debug;
 
-#ifdef WITH_SCITOKENS
-	char ** access_token;
-        
+        char ** auth_method;
+
+#ifdef WITH_SCITOKENS        
 	// Scitokens
 	char ** issuers;
 #endif

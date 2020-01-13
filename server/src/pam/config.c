@@ -175,16 +175,16 @@ parse_file(struct config * config)
                                                   values);
 	    free_array(save_ptr);
 	}
+#endif //SCITOKENS
         else
-	if (strcmp(key, "access_token") == 0)
+	if (strcmp(key, "auth_method") == 0)
 	{
 	      
-	    char ** save_ptr = config->access_token;  
-            config->access_token = merge_values(config->access_token,
+	    char ** save_ptr = config->auth_method;  
+            config->auth_method = merge_values(config->auth_method,
                                                   values);
 	    free_array(save_ptr);
 	}
-#endif // WITH_SCITOKENS
         else
         {
             logger(LOG_TYPE_ERROR,
