@@ -437,104 +437,99 @@ _cmd_login(pam_handle_t   * pam,
 	*reply = NULL;
 
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
-#ifdef WITH_SCITOKENS	
-	//Scitoken
-        const char * scitoken_requested_user = NULL;
-	pam_get_user(pam, &scitoken_requested_user, NULL);
-	if((sizeof(config->access_token) != 0) &&\
-	   (strcmp(config->access_token[0],"scitokens") == 0) &&\
-	   scitoken_verify(access_token,config,scitoken_requested_user))
-	{
-	      logger(LOG_TYPE_INFO,
-	      	     "Scitoken Identity %s authorizing as a local user",
-	      	     scitoken_requested_user);
-	      pam_status = PAM_SUCCESS;
-	      goto scitokencleanup;
-	}
-#endif // WITH_SCITOKENS
 	
-	introspect = get_introspect_resource(config, access_token);
-	if (!introspect)
+	for(int i = 0;config->auth_method[i];i++)
 	{
-		*reply = _build_error_reply("UNEXPECTED_ERROR",
-		                            "An unexpected error occurred.");
-		goto cleanup;
-	}
+	    if(strcmp(config->auth_method[i],"scitokens") == 0)
+	      {
+#ifdef WITH_SCITOKENS
+		  const char * scitoken_requested_user = NULL;
+		  pam_get_user(pam, &scitoken_requested_user, NULL);
+	          if(scitoken_verify(access_token,config,scitoken_requested_user))
+	          {
+		    logger(LOG_TYPE_INFO,
+			   "Scitoken Identity %s authorizing as a local user",
+			   scitoken_requested_user);
+		    pam_status = PAM_SUCCESS;
+		    goto scitokencleanup;
+		  }
+#else
+		  logger(LOG_TYPE_INFO,
+			 "Scitokens used in auth_method but not compiled with scitokens support");
+#endif //SCITOKENS	      
+	      }
+	      if(strcmp(config->auth_method[i],"globus_auth") == 0)
+	      {
 
-	client = get_client_resource(config);
-	if (!client)
-	{
-		*reply = _build_error_reply("UNEXPECTED_ERROR",
-		                            "An unexpected error occurred.");
-		goto cleanup;
-	}
+	 introspect = get_introspect_resource(config, access_token);
+	 if (!introspect)
+	 {
+		 *reply = _build_error_reply("UNEXPECTED_ERROR",
+					     "An unexpected error occurred.");
+		 goto cleanup;
+	 }
 
-	if (!_is_token_valid(introspect, client))
-	{
-		*reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
-		pam_status = PAM_AUTH_ERR;
-		goto cleanup;
-	}
+	 client = get_client_resource(config);
+	 if (!client)
+	 {
+		 *reply = _build_error_reply("UNEXPECTED_ERROR",
+					     "An unexpected error occurred.");
+		 goto cleanup;
+	 }
 
-	pam_status = PAM_AUTHINFO_UNAVAIL;
-	identities = get_identities_resource(config, introspect);
-	if (!identities) goto cleanup;
+	 if (!_is_token_valid(introspect, client))
+	 {
+		 *reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
+		 pam_status = PAM_AUTH_ERR;
+		 goto cleanup;
+	 }
 
-	if (!_is_session_valid(config, introspect, identities))
-	{
-		char * tmp = _build_error_reply("SESSION_VIOLATION",
-		                "The access token does not meet session requirements.");
-		*reply = base64_encode(tmp);
-		free(tmp);
-		pam_status = PAM_AUTH_ERR;
-		goto cleanup;
-	}
+	 pam_status = PAM_AUTHINFO_UNAVAIL;
+	 identities = get_identities_resource(config, introspect);
+	 if (!identities) goto cleanup;
 
-	account_map = account_map_init(config, identities);
+	 if (!_is_session_valid(config, introspect, identities))
+	 {
+		 char * tmp = _build_error_reply("SESSION_VIOLATION",
+				 "The access token does not meet session requirements.");
+		 *reply = base64_encode(tmp);
+		 free(tmp);
+		 pam_status = PAM_AUTH_ERR;
+		 goto cleanup;
+	 }
 
-	const char * requested_user = NULL;
-	pam_get_user(pam, &requested_user, NULL);
+	 account_map = account_map_init(config, identities);
 
-	if (!is_acct_in_map(account_map, requested_user))
-	{
-		pam_status = PAM_AUTH_ERR;
-		*reply = _build_error_reply("INVALID_ACCOUNT",
-		                            "You cannot use that local account.");
-		goto cleanup;
-	}
+	 const char * requested_user = NULL;
+	 pam_get_user(pam, &requested_user, NULL);
 
-	logger(LOG_TYPE_INFO,
-	       "Identity %s authorized as local user %s", 
-	       acct_to_username(account_map, requested_user),
-	       requested_user);
+	 if (!is_acct_in_map(account_map, requested_user))
+	 {
+		 pam_status = PAM_AUTH_ERR;
+		 *reply = _build_error_reply("INVALID_ACCOUNT",
+					     "You cannot use that local account.");
+		 goto cleanup;
+	 }
 
-	pam_status = PAM_SUCCESS;
+	 logger(LOG_TYPE_INFO,
+		"Identity %s authorized as local user %s", 
+		acct_to_username(account_map, requested_user),
+		requested_user);
 
-cleanup:
-	client_fini(client);
+	 pam_status = PAM_SUCCESS;
+	 break;
+cleanup://Terminate verification flow for Globus_auth
+        client_fini(client);
 	introspect_fini(introspect);
 	identities_fini(identities);
 	account_map_fini(account_map);
-	
-	if((sizeof(config->access_token) != 0) &&\
-	   config->access_token[1] &&\
-	   (strcmp(config->access_token[1],"scitokens") == 0) &&\
-	   scitoken_verify(access_token,config,scitoken_requested_user))
-	{
-	      logger(LOG_TYPE_INFO,
-	      	     "Scitoken Identity %s authorizing as a local user",
-	      	     scitoken_requested_user);
-	      pam_status = PAM_SUCCESS;
-	      goto scitokencleanup;
-	}
-
-	return pam_status;
+     }	          
+  }
 
 #ifdef WITH_SCITOKENS
 scitokencleanup:
-    return pam_status;
 #endif // WITH_SCITOKENS
-
+	return pam_status;
 }
 
 
