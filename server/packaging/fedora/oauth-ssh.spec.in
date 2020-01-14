@@ -30,7 +30,6 @@ BuildRequires:  libtool-ltdl-devel
 BuildRequires:  checkpolicy
 BuildRequires:  policycoreutils-python
 BuildRequires:  python-setuptools
-BuildRequires:  scitokens-cpp
 
 Requires:  libcurl
 Requires:  openssl
