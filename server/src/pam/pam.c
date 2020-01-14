@@ -451,7 +451,7 @@ _cmd_login(pam_handle_t   * pam,
 			   "Scitoken Identity %s authorizing as a local user",
 			   scitoken_requested_user);
 		    pam_status = PAM_SUCCESS;
-		    goto scitokencleanup;
+		    break;
 		  }
 #else
 		  logger(LOG_TYPE_INFO,
@@ -525,10 +525,6 @@ cleanup://Terminate verification flow for Globus_auth
 		account_map_fini(account_map);
      }	          
   }
-
-#ifdef WITH_SCITOKENS
-scitokencleanup:
-#endif // WITH_SCITOKENS
 	return pam_status;
 }
 
