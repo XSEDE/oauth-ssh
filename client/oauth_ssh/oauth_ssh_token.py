@@ -112,7 +112,7 @@ def oauth_ssh_token():
               help='Preferred Globus Auth identity to use during consent.')
 @click.option('-p', '--port', nargs=1, metavar='<port>', default=22,
               help='Port that the SSH services runs on. Defaults to 22.')
-@click.argument('fqdn', 'FQDN')
+@click.argument('fqdn')
 @handle_errors
 def token_authorize(fqdn, port, identity):
     # If we are going to authorize, might as well make a clean start
@@ -152,7 +152,7 @@ oauth_ssh_token.add_command(token_authorize)
 #
 ###################################
 @click.command('revoke', short_help='Revoke the access and refresh tokens')
-@click.argument('fqdn', 'FQDN')
+@click.argument('fqdn')
 @handle_errors
 def token_revoke(fqdn):
     revoke_token(fqdn, 'access_token')
@@ -181,7 +181,7 @@ oauth_ssh_token.add_command(token_show)
                 short_help='Display the accounts available for FQDN.')
 @click.option('-p', '--port', nargs=1, metavar='<port>', default=22,
               help='Port that the SSH services runs on. Defaults to 22')
-@click.argument('fqdn', 'FQDN')
+@click.argument('fqdn')
 @handle_errors
 def show_accounts(fqdn, port):
     acct_map = Config.load_object(fqdn, AccountMap)
@@ -202,7 +202,7 @@ token_show.add_command(show_accounts)
 #
 ###################################
 @click.command('token', short_help='Display the token for FQDN.')
-@click.argument('fqdn', 'FQDN')
+@click.argument('fqdn')
 @handle_errors
 def show_token(fqdn):
     click.echo(find_access_token(fqdn))
