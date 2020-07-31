@@ -15,10 +15,10 @@ setup(
     python_requires='>=3.5',
 
     install_requires=[
-        'requests>=2.21.0,<3.0',
-        'click>=6.7,<7.0',
-        'cryptography==3.2',
-        'paramiko==2.6.0',
+        'requests',
+        'click>=7.0',
+        'cryptography',
+        'paramiko',
     ],
 
     entry_points='''
