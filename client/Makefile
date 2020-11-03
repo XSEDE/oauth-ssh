@@ -21,7 +21,7 @@ endif
 
 ifndef PYTHON_VERSION
     PYTHON_VERSION=system
-    CREATE_VIRTUAL_ENV=virtualenv
+    CREATE_VIRTUAL_ENV=virtualenv --python=python3
     VENV_ROOT=venv_$(PYTHON_VERSION)
     PYTHON_EXE=$(VENV_ROOT)/bin/python
     PIP=$(VENV_ROOT)/bin/pip
