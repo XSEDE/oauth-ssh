@@ -14,6 +14,10 @@ SETTINGS = {
                       '892ee39b-545a-4505-965a-cff0c96f4e74',
                       'auth.globus.org'
                   ),
+    'preview': (
+                      '12e557e7-ae78-4d2b-b05b-cc1b088ce27b',
+                      'auth.preview.globus.org'
+                  ),
     'sandbox':    (
                       'b15c619c-e40e-461a-9a43-0fa21e0f3d35',
                       'auth.sandbox.globuscs.info'
