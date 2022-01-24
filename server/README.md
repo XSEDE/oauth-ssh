@@ -332,6 +332,12 @@ Makefile.bootstrap has two options of interest:
 
 Both options will use sudo to install prerequisites.
 
+**Tagging**
+
+All server releases are tagged using the format SERVER_&lt;version&gt;, ie. `SERVER_0.10`. Building from master instead of from a
+release tag may include newer changes not associated with the release. Always build from release tags for production use and when
+creating packages for distribution.
+
 
 **Testing**
 

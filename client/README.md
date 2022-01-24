@@ -304,6 +304,12 @@ cd oauth-ssh/client
 make package
 ```
 
+**Tagging**
+
+All client releases are tagged using the format CLIENT_&lt;version&gt;, ie. `CLIENT_0.10`. Building from master instead of from a
+release tag may include newer changes not associated with the release. Always build from release tags for production use and when
+creating packages for distribution.
+
 **Code Submissions**
 1. Submit an issue with the [OAuth SSH Repo](https://github.com/xsede/oauth-ssh/issues).
 2. Create a fork of the official repository for all work.
