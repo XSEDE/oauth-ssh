@@ -1,5 +1,5 @@
 all:
-	$(error Usage: "make {develop|test|package} [PYTHON_VERSION=<x.y.z>]")
+	$(error Usage: "make {develop|test|release} [PYTHON_VERSION=<x.y.z>]")
 
 ifdef PYTHON_VERSION
     PYENV := $(shell command -v pyenv 2> /dev/null)
@@ -54,7 +54,7 @@ $(NOSETESTS): $(VENV_ROOT)
 	$(PIP) install nose
 
 
-package: $(VENV_ROOT)
+release: $(VENV_ROOT)
 	$(PIP) install wheel
 	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py bdist_wheel --universal
 

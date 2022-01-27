@@ -259,10 +259,10 @@ Further access to ssh.demo.globus.org will require you to rerun the
 ### Development Installation (Non PyPi)
 In general, the build system supports the following syntax:
 ```shell
-make {develop|test|package} [PYTHON_VERSION=<x.y.z>]
+make {develop|test|release} [PYTHON_VERSION=<x.y.z>]
   develop - installation from source, recommended for new development
   test    - installation from source, run unit tests against install
-  package - prepare a pypi package ready for upload
+  release - prepare a pypi package ready for upload
   
   PYTHON_VERSION is optional. When it is not given, virtualenv and the default
   system python installation is used to install oauth-ssh to 'venv_system/'.
@@ -301,7 +301,7 @@ PyPi package creation:
 sudo pip install virtualenv  
 git clone git@github.com:xsede/oauth-ssh.git  
 cd oauth-ssh/client
-make package
+make release
 ```
 
 **Tagging**
