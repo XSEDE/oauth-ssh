@@ -86,8 +86,9 @@ Globus Auth. Visit
 
 ## Installation on CentOS 7
 
-First, add the XSEDE development repository to your package management system:
+Add the EPEL and XSEDE repositories to your package management system:
 
+    $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     $ sudo yum install http://software.xsede.org/development/repo/repos/XSEDE-Development-config.centos-7-1.noarch.rpm
     $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-XSEDE-Development
 
