@@ -52,8 +52,10 @@ Globus Auth. Visit
     
     3.  Leave "Scopes" blank.
     
-    4.  In the "Redirects" box, enter
-        "https://auth.globus.org/v2/web/auth-code".
+    4.  In the "Redirects" box, enter a fake URL, for example
+        "https://fakecallback.com/callback". This value is never used by
+        the SSH service; the requirement to enter this value is a limitation
+        of the "App Registration" which will be fixed in the future.
     
     5.  Leave "Required Identity" unselected.
     
@@ -68,7 +70,7 @@ Globus Auth. Visit
 5.  Click "Generate a New Client Secret", fill out the form.
 
 6.  Save the client_id and client_secret values for use in the
-    oauth-ssh.conf file later.
+    globus-ssh.conf file later.
 
 7.  It is also recommended that you add other appropriate users in your
     organization as administrators of the project for the sake of
@@ -315,7 +317,7 @@ pam_oauth_ssh.so returns the following control values:
 To enable SciToken as a verification method:
 1. Install https://github.com/scitokens/scitokens-cpp/releases
 2. Compile the module from the source.
-3. Set allowed "issuers", uncomment "access_token" in oauth-ssh.conf file
+3. Set allowed "issuers", uncomment "access_token" in globus-ssh.conf file
 4. Install client-side normally and use SciToken to login. (Both valid SciToken and Globus Auth token will be accepted)
 
 Payload format for Scitokens:
