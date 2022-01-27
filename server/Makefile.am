@@ -1,7 +1,3 @@
-##
-## Copyright The University of Chicago
-## All Rights Reserved.
-##
 SUBDIRS = src/pam src/config man/
 
 oauthsshconfdir = $(sysconfdir)/oauth_ssh

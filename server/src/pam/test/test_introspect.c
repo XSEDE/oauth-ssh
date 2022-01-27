@@ -1,9 +1,4 @@
 /*
- * Copyright The University of Chicago
- * All Rights Reserved.
- */
-
-/*
  * System includes.
  */
 #include <syslog.h>
