@@ -1,64 +1,105 @@
-PKGS_PRE:= epel-release
-PKGS:= git \
-       gcc \
-       autoconf \
-       automake \
-       cmake3 \
-       libcurl-devel \
-       openssl-devel \
-       json-c-devel \
-       pam-devel \
-       libtool \
-       rpm-build \
-       libtool-ltdl-devel
-
-MISSING_PKGS_PRE:=$(shell \
-	for p in ${PKGS_PRE}; do \
-		rpm -q $$p > /dev/null || echo $$p; \
-	done)
-
-MISSING_PKGS:=$(shell \
-	for p in ${PKGS}; do \
-		rpm -q $$p > /dev/null || echo $$p; \
-	done)
-
-CMOCKA_VER:= 1.1.3
-CMOCKA_SRC:= cmocka-$(CMOCKA_VER)
-CMOCKA_TAR:= $(CMOCKA_SRC).tar.xz
-CMOCKA_URL:= https://cmocka.org/files/1.1/$(CMOCKA_TAR)
-CMOCKA_PRE:= $(shell pwd)/cmocka
-
-CMOCKA_BUILD:=(mkdir $(CMOCKA_SRC)/build;  \
-    cd $(CMOCKA_SRC)/build; \
-    cmake3 -DCMAKE_INSTALL_PREFIX=$(CMOCKA_PRE) -DCMAKE_BUILD_TYPE=Debug ..; \
-    make; \
-    make install)
-
-CONFIGURE:=PKG_CONFIG_PATH=$(CMOCKA_PRE)/lib64/pkgconfig/ ./configure
-
 all: help
 
 help:
-	@echo "Usage: make [develop|release]"
+	@echo "Usage: make [develop|test|release]"
 
-setup:
-	[ -z "$(MISSING_PKGS_PRE)" ] || sudo yum install -y $(MISSING_PKGS_PRE)
-	[ -z "$(MISSING_PKGS)" ] || sudo yum install -y $(MISSING_PKGS)
-	[ -f $(CMOCKA_TAR) ] || curl -o $(CMOCKA_TAR) $(CMOCKA_URL)
-	[ -d $(CMOCKA_SRC) ] || tar xf $(CMOCKA_TAR)
-	[ -d $(CMOCKA_PRE) ] || $(CMOCKA_BUILD)
+############################################################################
+# INSTALL PREREQUISITES
+#
+# Install dependencies using sudo as needed. This is all very CentOS 7
+# specific. It is provided as a convenience factor; if we support additional
+# distros, this will likely need to move to documentation.
+############################################################################
+
+#
+# Phase 1: EPEL Repo (required by following phases)
+#
+
+PREREQS:= epel-release
+
+MISSING_PREREQS:=$(shell \
+	for p in ${PREREQS}; do \
+		rpm -q $$p > /dev/null || echo $$p; \
+	done)
+
+install_prereqs:
+	[ -z "$(MISSING_PREREQS)" ] || sudo yum install -y $(MISSING_PREREQS)
+
+.PHONY: install_prereqs
+
+#
+# Phase 2: Development Prereqs
+#
+
+DEVELOP_PREREQS=\
+	autoconf \
+	automake \
+	cmake3 \
+	libcmocka-devel \
+	libcmocka \
+	libcmocka-static \
+	gcc \
+	json-c-devel \
+	libcurl-devel \
+	libtool \
+	libtool-ltdl-devel \
+	openssl-devel \
+	pam-devel \
+	pkgconfig \
+	python3 \
+	python-setuptools
+
+MISSING_DEVELOP_PREREQS=$(shell \
+	for p in ${DEVELOP_PREREQS}; do \
+		rpm -q $$p > /dev/null || echo $$p; \
+	done)
+
+install_develop_prereqs: install_prereqs
+	[ -z "$(MISSING_DEVELOP_PREREQS)" ] || sudo yum install -y $(MISSING_DEVELOP_PREREQS)
+
+.PHONY: install_develop_prereqs
+
+#
+# Phase 3: Release Prereqs
+#
+
+RELEASE_PREREQS=\
+	checkpolicy \
+	policycoreutils-python \
+	python-setuptools \
+	rpm-build
+
+MISSING_RELEASE_PREREQS=$(shell \
+	for p in ${RELEASE_PREREQS}; do \
+		rpm -q $$p > /dev/null || echo $$p; \
+	done)
+
+install_release_prereqs: install_develop_prereqs
+	[ -z "$(MISSING_RELEASE_PREREQS)" ] || sudo yum install -y $(MISSING_RELEASE_PREREQS)
+
+.PHONY: install_release_prereqs
+
+############################################################################
+# Main build targets
+############################################################################
+
+setup: install_develop_prereqs
 	[ -f configure ] || autoreconf -i
-	[ -f Makefile ] || CFLAGS=$(CFLAGS) $(CONFIGURE)
+	[ -f Makefile ] || CFLAGS="$(CFLAGS)" $(CMOCKA_OPTS) ./configure
 	make
-	#LD_LIBRARY_PATH=$(CMOCKA_PRE)/lib64:$(PWD)/src/pam/.libs make check
 
-develop: CFLAGS='-DDEBUG -Wall -ggdb3'
+develop: CFLAGS=-DDEBUG -Wall -ggdb3
 develop: setup
 
-release: CFLAGS='-O3'
-release: setup
+test: develop
+	make check
+
+release: CFLAGS=-O3
+release: setup install_release_prereqs
 	make dist
 	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
 	cp oauth_ssh-*.tar.gz SOURCES
 	echo "%_topdir " `pwd` >> ~/.rpmmacros
 	rpmbuild -v -bb --clean  packaging/fedora/oauth-ssh.spec
+
+.PHONY: setup develop test release

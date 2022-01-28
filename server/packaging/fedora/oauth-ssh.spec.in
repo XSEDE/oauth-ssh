@@ -19,23 +19,32 @@ Conflicts: globus-ssh
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libcurl-devel
-BuildRequires:  openssl-devel
-BuildRequires:  json-c-devel
-BuildRequires:  pam-devel
-BuildRequires:  pkgconfig
-BuildRequires:  automake
-BuildRequires:  libtool
-BuildRequires:  libtool-ltdl-devel
-BuildRequires:  checkpolicy
-BuildRequires:  policycoreutils-python
-BuildRequires:  python-setuptools
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: cmake3
+BuildRequires: libcmocka-devel
+BuildRequires: libcmocka
+BuildRequires: libcmocka-static
+BuildRequires: gcc
+BuildRequires: json-c-devel
+BuildRequires: libcurl-devel
+BuildRequires: libtool
+BuildRequires: libtool-ltdl-devel
+BuildRequires: make
+BuildRequires: openssl-devel
+BuildRequires: pam-devel
+BuildRequires: pkgconfig
+BuildRequires: python3
+BuildRequires: python-setuptools
 
-Requires:  libcurl
-Requires:  openssl
-Requires:  json-c
-Requires:  pam
-Requires:  python-click
+Requires: json-c
+Requires: libcurl
+Requires: openssl
+Requires: pam
+Requires: policycoreutils-python
+Requires: python3
+Requires: python-click
+Requires: python-requests
 
 Requires(post): /usr/sbin/semodule, /usr/sbin/useradd, /usr/bin/getent
 Requires(postun): /usr/sbin/userdel, /usr/sbin/semodule
@@ -71,13 +80,8 @@ autoreconf -if
 
 make %{?_smp_mflags}
 
-#
-# check section
-#
-# XXX not until we can figure out how to add cmocka to the build
-# and set LD_LIBRARY_PATH accordingly for 'make check'
-#%check
-#make check
+%check
+make check
 
 #
 # install section

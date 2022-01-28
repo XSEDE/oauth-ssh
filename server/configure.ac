@@ -6,14 +6,13 @@ AC_CONFIG_MACRO_DIR([m4])
 PKG_CHECK_MODULES([CURL],   [libcurl],[], [])
 PKG_CHECK_MODULES([SSL],    [libssl], [], [])
 PKG_CHECK_MODULES([JSONC],  [json-c], [], [])
-PKG_CHECK_MODULES([CMOCKA], [cmocka], [], [AC_MSG_WARN([skipping tests])])
-AM_CONDITIONAL([UNIT_TEST], [test ! -z ${CMOCKA_LIBS+x}])
+PKG_CHECK_MODULES([CMOCKA], [cmocka], [], [])
 
 AC_ARG_ENABLE(scitokens, [AS_HELP_STRING([--enable-scitokens],[Enable SciTokens support for authorization (default is no)])],
  [enable_scitokens="yes"],
  [enable_scitokens="no"])
 
-AC_MSG_RESULT($enable_scitokens)
+AC_MSG_RESULT(checking if SciTokens are enabled... $enable_scitokens)
 AS_IF([test "$enable_scitokens" = "yes"],[
    AC_CHECK_LIB(SciTokens,scitoken_create,[],[AC_MSG_ERROR([Missing SciTokens library])])
    AC_CHECK_HEADERS(scitokens/scitokens.h,[],[AC_MSG_ERROR([Missing scitokens.h header file])])

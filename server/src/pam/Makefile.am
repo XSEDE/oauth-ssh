@@ -1,9 +1,4 @@
-SUBDIRS = .
-
-if UNIT_TEST
-        SUBDIRS += test
-endif
-
+SUBDIRS = . test
 
 ACLOCAL_AMFLAGS = -I m4
 
