@@ -1,7 +1,7 @@
 # vi(m) swap files:
 *.sw?
 
-Makefile
+server/**/Makefile
 RPMS/
 SOURCES/
 cmocka*
