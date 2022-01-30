@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 // Disable assert in release code
-#define ASSERT(x) 
+#define ASSERT(x)
 // Hide functions in release code
 #define STATIC static
 // Prevent weak symbols in release code

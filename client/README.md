@@ -39,22 +39,22 @@ If you do not have Pip installed, then try these three solutions, in
 order:
 
 1.  Use a package manager
-    
+
     If you’re already using a package manager like `apt`, `yum`,
     `choco`, or `brew`, you should install pip via that package manager.
     For example, on Enterprise Linux:
-    
+
         $ sudo yum install -y epel-release
         $ sudo yum install -y python-pip
 
 2.  Use `ensurepip`
-    
+
     Try to bootstrap `pip` from the standard library:
-    
+
         python -m ensurepip --default-pip
 
 3.  Use `get-pip.py`
-    
+
         $ curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
         $ python get-pip.py --user
 
@@ -134,7 +134,7 @@ the webpage into the prompt of the `oauth-ssh-token` command.
     Please enter the code you get after login here: UDuEvPPoK0lkfig1Cklr8Nb8L4vXfx
 
 > **Note**
-> 
+>
 > The authorization URL and code will change with every instantiation of
 > the `authorize` command.
 
@@ -143,7 +143,7 @@ the webpage into the prompt of the `oauth-ssh-token` command.
 Use `oauth-ssh` to access the host that we just authorized:
 
     $ oauth-ssh ssh.demo.globus.org
-    Last login: Tue Mar 5 22:52:18 UTC 2019 
+    Last login: Tue Mar 5 22:52:18 UTC 2019
     [<johndoe@ssh.demo.globus.org> ~]$
 
 ### Choosing the Remote User Account
@@ -240,7 +240,7 @@ for that host:
     Use `oauth-ssh-token authorize ssh.demo.globus.org`
 
 > **Note**
-> 
+>
 > that this does not interrupt existing SSH sessions; only new
 > connections are subject to reauthentication.
 
@@ -263,27 +263,27 @@ make {develop|test|release} [PYTHON_VERSION=<x.y.z>]
   develop - installation from source, recommended for new development
   test    - installation from source, run unit tests against install
   release - prepare a pypi package ready for upload
-  
+
   PYTHON_VERSION is optional. When it is not given, virtualenv and the default
   system python installation is used to install oauth-ssh to 'venv_system/'.
   When PYTHON_VERSION is given, pyenv and pyenv-virtualenv are used to build
-  a virtual environment against the given python version. You must choose a 
+  a virtual environment against the given python version. You must choose a
   python version supported by pyenv.
 ```
 
 Installation of prerequisites (Enterprise Linux and derivatives):
 ```shell
 sudo yum install -y epel-release git
-sudo yum install -y python2-pip  
+sudo yum install -y python2-pip
 ```
 
 Installation for general development against the system default python:
 ```shell
-sudo pip install virtualenv  
-git clone git@github.com:xsede/oauth-ssh.git  
-cd oauth-ssh  
+sudo pip install virtualenv
+git clone git@github.com:xsede/oauth-ssh.git
+cd oauth-ssh
 make develop
-. ./venv_system/bin/activate  
+. ./venv_system/bin/activate
 ```
 Installation for version-specific python debugging and testing:
 ```shell
@@ -291,15 +291,15 @@ git clone https://github.com/pyenv/pyenv.git
 export PYENV_ROOT=`pwd`/pyenv
 export PATH="${PYENV_ROOT}/bin:$PATH"
 git clone https://github.com/pyenv/pyenv-virtualenv.git ${PYENV_ROOT}/plugins/pyenv-virtualenv
-git clone git@github.com:xsede/oauth-ssh.git  
+git clone git@github.com:xsede/oauth-ssh.git
 cd oauth-ssh/client
 make develop PYTHON_VERSION=x.y.z
-. .${PYENV_ROOT}/venv_x.y.z/bin/activate  
+. .${PYENV_ROOT}/venv_x.y.z/bin/activate
 ```
 PyPi package creation:
 ```shell
-sudo pip install virtualenv  
-git clone git@github.com:xsede/oauth-ssh.git  
+sudo pip install virtualenv
+git clone git@github.com:xsede/oauth-ssh.git
 cd oauth-ssh/client
 make release
 ```

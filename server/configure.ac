@@ -34,9 +34,9 @@ AM_PROG_AR
 
 LT_INIT
 
-AC_CONFIG_FILES(Makefile 
-                src/pam/Makefile 
-                src/pam/test/Makefile 
+AC_CONFIG_FILES(Makefile
+                src/pam/Makefile
+                src/pam/test/Makefile
                 src/config/Makefile
                 src/config/setup.py
                 packaging/fedora/oauth-ssh.spec

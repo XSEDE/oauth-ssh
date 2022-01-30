@@ -44,25 +44,25 @@ Globus Auth. Visit
 
 3.  From the "Add.." menu for the project click "Add new app" and fill
     out the form.
-    
+
     1.  Set "App Name" to "SSH@\<FQDN\>" where '\<FQDN\>' is the fully
         qualified domain name of the SSH service you are registering.
-    
+
     2.  Leave "Native App" unselected.
-    
+
     3.  Leave "Scopes" blank.
-    
+
     4.  In the "Redirects" box, enter a fake URL, for example
         "https://fakecallback.com/callback". This value is never used by
         the SSH service; the requirement to enter this value is a limitation
         of the "App Registration" which will be fixed in the future.
-    
+
     5.  Leave "Required Identity" unselected.
-    
+
     6.  Leave "Pre-select Identity Provider" unselected.
-    
+
     7.  Leave "Privacy Policy" unselected.
-    
+
     8.  Leave "Terms & Conditions" unselected.
 
 4.  Select "Create App".
@@ -79,7 +79,7 @@ Globus Auth. Visit
     your organization.
 
 > **Note**
-> 
+>
 > Each new SSH service requires a new Globus app registration, with its
 > own client id and client secret. These can be within the same project
 > or in different projects.
@@ -104,10 +104,10 @@ These first two options, `client_id` and `client_secret` allow
 oauth-ssh to communicate with Globus Auth in order to validate access
 tokens passed by the client and to determine the client identity:
 
-  - client_id <client_id>  
+  - client_id <client_id>
     Enter the client_id saved during app registration
 
-  - client_secret <client_secret>  
+  - client_secret <client_secret>
     Enter the client_secret saved during app registration
 
 The next two options configure oauth-ssh for mapping from Globus Auth
@@ -117,11 +117,11 @@ both. If both options are enabled, no priority or ordering is given to
 accounts mapped by either option; the user is able to choose the local
 account from all accounts returned from either option.
 
-  - idp_suffix \<string\>  
+  - idp_suffix \<string\>
     Suffix of identity provider whose usernames can be used for local
     account names. This option can only be used once.
 
-  - map_file \<path\>  
+  - map_file \<path\>
     Path to a text file that maps Globus identities to local users. This
     option may be used more than once.
 
@@ -216,13 +216,13 @@ authorized user.
 
 ### (Optional) Requiring Use of Specific Identity Providers
 
-  - permitted_idps idp1 [idp2]  
+  - permitted_idps idp1 [idp2]
     List of identity providers a user must choose from to authenticate
     to during authorization prior to accessing the local SSH service.
 
 ### (Optional) Requiring Reauthentication on a Given Cadence
 
-  - authentication_timeout <minutes>  
+  - authentication_timeout <minutes>
     Number of minutes before a user is required to reauthenticate with
     the selected identity provider. If permitted_idps is specified, the
     authentication must occur from one of the IdPs listed there.
@@ -316,7 +316,7 @@ pam_oauth_ssh.so returns the following control values:
   - user_unknown  the authenticated user requested an unmapped or non existent account
 
 > **Note**
-> 
+>
 > When the requested account is unknown, sshd will reprompt the user
 > with the OAuth token prompt in order to avoid disclosing
 > available accounts. This is by design for OpenSSH and is unavoidable.

@@ -26,7 +26,7 @@ def _check_permissions(path):
     else:
         dir = os.path.dirname(path)
         if not os.path.isdir(dir):
-            raise ConfigError(path 
+            raise ConfigError(path
                               + ' is not a valid path: '
                               + ' parent is not a directory')
 

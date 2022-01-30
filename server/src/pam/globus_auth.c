@@ -37,7 +37,7 @@ globus_auth_host(const struct config * config)
 	return "auth.globus.org";
 }
 
-struct introspect * 
+struct introspect *
 get_introspect_resource(const struct config * config, const char * token)
 {
 	char * reply_body = NULL;

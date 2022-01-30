@@ -62,7 +62,7 @@ _id_matches_suffix(const struct identity * id, const char * suffix)
 }
 
 /*
- * For each line in each map_file, add the 'id' => 'acct' mapping if 
+ * For each line in each map_file, add the 'id' => 'acct' mapping if
  * 'acct' is in 'identities'.
  */
 static struct account_map *

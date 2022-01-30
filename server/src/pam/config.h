@@ -25,7 +25,7 @@ struct config {
 
         char ** auth_method;
 
-#ifdef WITH_SCITOKENS        
+#ifdef WITH_SCITOKENS
 	// Scitokens
 	char ** issuers;
 #endif

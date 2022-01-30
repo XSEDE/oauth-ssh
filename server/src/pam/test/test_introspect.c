@@ -57,7 +57,7 @@ enum {
 };
 
 // These allow us to convert the enum value to a field name.
-const char * field_name[] = 
+const char * field_name[] =
 {
 	"active",
 	"scope",
@@ -166,7 +166,7 @@ create_json_string(const char * string_array[])
  * it allows us to make sure the error condition we caused is the error
  * condition we expected.
  */
-void 
+void
 logger(log_type_t type, const char * format, ...)
 {
 	char log_message[128];
@@ -452,7 +452,7 @@ test_authentications(void ** state)
 	//
 	// Test '"authentications": null'
 	//
-	minimum_required_fields[OTHER] = 
+	minimum_required_fields[OTHER] =
 		"'session_info': {        "
 		"  'session_id': 'sid1',  "
 		"  'authentications': null"
@@ -476,7 +476,7 @@ test_authentications(void ** state)
 	//
 	// Test '"authentications": {}'
 	//
-	minimum_required_fields[OTHER] = 
+	minimum_required_fields[OTHER] =
 		"'session_info': {      "
 		"  'session_id': 'sid1',"
 		"  'authentications': {}"
@@ -500,7 +500,7 @@ test_authentications(void ** state)
 	//
 	// Test one authentication with MFA
 	//
-	minimum_required_fields[OTHER] = 
+	minimum_required_fields[OTHER] =
 		"'session_info': {       "
 		"  'session_id': 'sid1', "
 		"  'authentications': {  "
@@ -540,7 +540,7 @@ test_authentications(void ** state)
 	//  - one with an 'amr' with multiple values, one of which is mfa
 	//  - one with an 'amr' set to 'null'
 	//
-	minimum_required_fields[OTHER] = 
+	minimum_required_fields[OTHER] =
 		"'session_info': {           "
 		"  'session_id': 'sid1',     "
 		"  'authentications': {      "

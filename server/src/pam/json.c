@@ -73,7 +73,7 @@ jobj_get_value(jobj_t * jobj,  const char * key)
 {
 	ASSERT(json_object_get_type(jobj) == json_type_object);
 	ASSERT(jobj_key_exists(jobj, key));
-	ASSERT(jobj_get_type(jobj, key) == json_type_object || 
+	ASSERT(jobj_get_type(jobj, key) == json_type_object ||
 	       jobj_get_type(jobj, key) == json_type_array);
 	struct json_object * jtmp;
 	json_object_object_get_ex(jobj, key, &jtmp);

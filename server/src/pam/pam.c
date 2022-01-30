@@ -94,7 +94,7 @@ _get_pam_conv(pam_handle_t * pam)
 	if (pam_err != PAM_SUCCESS)
 	{
 		logger(LOG_TYPE_ERROR,
-		       "Failed to retrieve PAM conversation function: %s", 
+		       "Failed to retrieve PAM conversation function: %s",
 		       pam_strerror(pam, pam_err));
  		return NULL;
 	}
@@ -157,7 +157,7 @@ _send_our_reply(pam_handle_t * pam, const char * reply)
 
 		if (pam_err != PAM_SUCCESS)
 			logger(LOG_TYPE_ERROR,
-			       "Failed to send our reply: %s", 
+			       "Failed to send our reply: %s",
 			       pam_strerror(pam, pam_err));
 
 		if (resp) free(resp->resp);
@@ -436,7 +436,7 @@ _cmd_login(pam_handle_t   * pam,
 	*reply = NULL;
 
 	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
-	
+
 	for(int i = 0;config->auth_method[i];i++)
 	{
 	    if(strcmp(config->auth_method[i],"scitokens") == 0)
@@ -455,7 +455,7 @@ _cmd_login(pam_handle_t   * pam,
 #else
 		  logger(LOG_TYPE_INFO,
 			 "Scitokens used in auth_method but not compiled with scitokens support");
-#endif //SCITOKENS	      
+#endif //SCITOKENS
 	      }
 	      if(strcmp(config->auth_method[i],"globus_auth") == 0)
 	      {
@@ -509,7 +509,7 @@ _cmd_login(pam_handle_t   * pam,
 		 }
 
 		 logger(LOG_TYPE_INFO,
-			"Identity %s authorized as local user %s", 
+			"Identity %s authorized as local user %s",
 			acct_to_username(account_map, requested_user),
 			requested_user);
 
@@ -520,7 +520,7 @@ cleanup://Terminate verification flow for Globus_auth
 		introspect_fini(introspect);
 		identities_fini(identities);
 		account_map_fini(account_map);
-     }	          
+     }
   }
 	return pam_status;
 }
@@ -557,7 +557,7 @@ _decode_input(const char * user_input,
 	decoded_input = base64_decode(user_input);
 	if (!decoded_input)
 		goto cleanup;
-	
+
 	jobj = jobj_init(decoded_input, NULL);
 	if (!jobj)
 		goto cleanup;

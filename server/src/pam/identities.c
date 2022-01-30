@@ -61,7 +61,7 @@ get_value(jobj_t     * jobj,
 		break;
 	case json_type_string:
 		tmp = jobj_get_string(jobj, key);
-		if (tmp) 
+		if (tmp)
 			*(char **)value = strdup(tmp);
 		break;
 	case json_type_boolean:
@@ -119,7 +119,7 @@ get_alternative_names(jarr_t * jarr, void * value)
 status_t
 get_identity_providers(jarr_t * jarr, void * value)
 {
-	struct identity_provider ** idp = 
+	struct identity_provider ** idp =
 	                     calloc(jarr_get_length(jarr)+1, sizeof(*idp));
 	*(struct identity_provider ***)value = idp;
 

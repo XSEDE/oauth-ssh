@@ -32,7 +32,7 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     size_t numberofissuers = sizeof(config->issuers)/sizeof(config->issuers[0]);
 
     char *null_ended_list[numberofissuers+1];
-    
+
     //Read list of issuers from configuration and create a null ended list of strings
     for(size_t i = 0; i<numberofissuers; i++) null_ended_list[i] = config->issuers[i];
     null_ended_list[numberofissuers] = NULL;
@@ -62,12 +62,12 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
         free(err_msg);
         return 0;
     }
-    
+
     //Preparing for enforcer test
     Enforcer enf;
     char hostname[1024];
     const char* aud_list[2];
-    
+
     //Retrieve the hostname for the audience. It is using hostname(NOT domain name). Set payload accordingly
     if (gethostname(hostname, 1024) != 0)
     {
@@ -90,7 +90,7 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
     Acl acl;
     acl.authz = "ssh";
     acl.resource = scitoken_requested_user;
-    
+
     if (enforcer_test(enf, scitoken, &acl, &err_msg))
     {
 	logger(LOG_TYPE_INFO,
@@ -98,7 +98,7 @@ int scitoken_verify(const char * auth_line, const struct config * config, const 
 		err_msg, acl.authz, acl.resource,aud_list[0]);
 	free(err_msg);
         return 0;
-    }    
+    }
 
     return 1;
 }

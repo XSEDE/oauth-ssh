@@ -16,8 +16,8 @@ class NeedToAuthorize(OAuthSSHError):
     def __init__(self, fqdn, msg):
         super(NeedToAuthorize, self).__init__(
              msg
-           + " Use `oauth-ssh-token authorize " 
-           + fqdn 
+           + " Use `oauth-ssh-token authorize "
+           + fqdn
            + "`.")
 
 
@@ -106,7 +106,7 @@ def oauth_ssh_token():
 # oauth-ssh-token authorize
 #
 #####################################
-@click.command('authorize', 
+@click.command('authorize',
        short_help='Perform an interactive consent flow to get an access token.')
 @click.option('--identity', nargs=1, metavar='<id>',
               help='Preferred Globus Auth identity to use during consent.')
@@ -143,7 +143,7 @@ def token_authorize(fqdn, port, identity):
     revoke_token(fqdn, 'access_token')
     revoke_token(fqdn, 'refresh_token')
     Config.save_object(fqdn, token)
-    
+
 oauth_ssh_token.add_command(token_authorize)
 
 ###################################

@@ -175,7 +175,7 @@ parse_file(struct config * config)
 
             config->authentication_timeout = atol(values[0]);
             timeout_set = true;
-        } 
+        }
         else
         if (strcmp(key, "mfa") == 0)
         {
@@ -194,13 +194,13 @@ parse_file(struct config * config)
             }
 
             mfa_set = true;
-        } 
+        }
 #ifdef WITH_SCITOKENS
         else
 	if (strcmp(key, "issuers") == 0)
 	{
-	      
-	    char ** save_ptr = config->issuers;  
+
+	    char ** save_ptr = config->issuers;
             config->issuers = merge_values(config->issuers,
                                                   values);
 	    free_array(save_ptr);
@@ -209,8 +209,8 @@ parse_file(struct config * config)
         else
 	if (strcmp(key, "auth_method") == 0)
 	{
-	      
-	    char ** save_ptr = config->auth_method;  
+
+	    char ** save_ptr = config->auth_method;
             config->auth_method = merge_values(config->auth_method,
                                                   values);
 	    free_array(save_ptr);

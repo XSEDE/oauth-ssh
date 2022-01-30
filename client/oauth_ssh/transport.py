@@ -99,7 +99,7 @@ class CmdInjectHandler():
         if self._state == 0:
             # On our first call, we are looking for PROMPT so we can insert our _command.
             # The inputs look like:
-            # 
+            #
             # title:  ""
             # instructions: ""
             # prompt_list: [('Enter your OAuth token: ', False)]

@@ -13,7 +13,7 @@
 #include "json.h"
 #include "debug.h" // always last
 
-const char * jstring = 
+const char * jstring =
 "{  "
 "	\"included\": {"
 "		\"identity_providers\": ["

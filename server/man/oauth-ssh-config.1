@@ -18,32 +18,32 @@ same <fqdn>.
 .SH OPTIONS
 .IP "--client_id <id>"
 .I <id>
-is the Globus Auth client id associated with your SSH service when it was 
+is the Globus Auth client id associated with your SSH service when it was
 registered at https://developers.globus.org/. Alternatively, this value can
 be specified in the
 .I CLIENT_ID
 environment variable. If neither value is available,
 .I oauth-ssh-config
-will retrieve the value of 
+will retrieve the value of
 .I auth_client_id
-from 
+from
 .I /etc/oauth-ssh/globus-ssh.conf
 
 .IP "--client_secret <secret>"
 .I <id>
-is the Globus Auth client secret associated with your SSH service when it was 
+is the Globus Auth client secret associated with your SSH service when it was
 registered at https://developers.globus.org/. Alternatively, this value can
 be specified in the
 .I CLIENT_SECRET
 environment variable. If neither value is available,
 .I oauth-ssh-config
-will retrieve the value of 
+will retrieve the value of
 .I auth_client_secret
-from 
+from
 .I /etc/oauth-ssh/globus-ssh.conf
 
 .IP "register <fqdn>"
-Register 
+Register
 .I <fqdn>
 with Globus Auth and associate
 .I <fqdn>
@@ -65,11 +65,11 @@ Alternative to using --client_secret command line option.
 
 .SH FILES
 .IP /etc/oauth-ssh/globus-ssh.conf
-The values of 
+The values of
 .I auth_client_id
 and
 .I auth_client_secret
-are used for 
+are used for
 .I --client_id
 and
 .I --client_secret
@@ -80,7 +80,7 @@ Associate client 779714b7-d1c1-c3f4b536f2a5 with ssh.example.com:
 
     # oauth-ssh-config --client_id 779714b7-d1c1-c3f4b536f2a5 --client_secret gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= register ssh.example.com
       Success
-    
+
 Same example but using alternative environment variables:
 
     # CLIENT_ID=779714b7-d1c1-c3f4b536f2a5 CLIENT_SECRET=gVJaFZk8K0JeRCRDTxTKJjchgcFfcs= oauth-ssh-config register ssh.example.com

@@ -1,6 +1,7 @@
 # vi(m) swap files:
 *.sw?
 
+venv/
 server/**/Makefile
 RPMS/
 SOURCES/
