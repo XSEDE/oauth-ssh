@@ -74,32 +74,58 @@ MISSING_RELEASE_PREREQS=$(shell \
 		rpm -q $$p > /dev/null || echo $$p; \
 	done)
 
-install_release_prereqs: install_develop_prereqs
+_install_release_prereqs: install_develop_prereqs
 	[ -z "$(MISSING_RELEASE_PREREQS)" ] || sudo yum install -y $(MISSING_RELEASE_PREREQS)
 
-.PHONY: install_release_prereqs
+.PHONY: _install_release_prereqs
 
 ############################################################################
 # Main build targets
 ############################################################################
 
-setup: install_develop_prereqs
+_setup: install_develop_prereqs
 	[ -f configure ] || autoreconf -i
 	[ -f Makefile ] || CFLAGS="$(CFLAGS)" $(CMOCKA_OPTS) ./configure
 	make
 
 develop: CFLAGS=-DDEBUG -Wall -ggdb3
-develop: setup
+develop: _setup
+	make -C src/config develop
 
 test: develop
 	make check
 
+define DIRTY_RELEASE
+###############################################################################
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNIG WARNING
+#
+# This release build is not on a release tag. Its version will be modified to
+# use the .dev suffix.
+#
+# Do not use in production. Do not distribute.
+###############################################################################
+endef
+export DIRTY_RELEASE
+
+RELEASE_TAG=$(shell \
+        git describe --tags --match 'SERVER_*' | \
+        sed 's/\(SERVER_[0-9]\+\.[0-9]\+\).*/\1/'\
+)
+
+_check_release:
+	@git diff --quiet $(RELEASE_TAG) -- . > /dev/null; \
+	if [ $$? != 0 ]; \
+	then \
+		echo "$$DIRTY_RELEASE"; \
+		sed -i 's/^##develop //' configure.ac; \
+	fi
+
 release: CFLAGS=-O3
-release: setup install_release_prereqs
+release: _check_release _setup _install_release_prereqs
 	make dist
 	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS
 	cp oauth_ssh-*.tar.gz SOURCES
 	echo "%_topdir " `pwd` >> ~/.rpmmacros
 	rpmbuild -v -bb --clean  packaging/fedora/oauth-ssh.spec
 
-.PHONY: setup develop test release
+.PHONY: _setup develop test release

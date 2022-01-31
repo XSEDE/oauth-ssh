@@ -34,11 +34,14 @@ AM_PROG_AR
 
 LT_INIT
 
+# This next line is modified by Makefile.bootstrap to mark development releases
+##develop AC_SUBST(PACKAGE_RELEASE_TAG, .dev)
+
 AC_CONFIG_FILES(Makefile
                 src/pam/Makefile
                 src/pam/test/Makefile
                 src/config/Makefile
-                src/config/setup.py
+                src/config/setup.cfg
                 packaging/fedora/oauth-ssh.spec
                 man/Makefile)
 

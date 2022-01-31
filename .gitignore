@@ -11,7 +11,7 @@ config.status
 libtool
 oauth_ssh-*.tar.gz
 server/packaging/fedora/oauth-ssh.spec
-server/src/config/setup.py
+server/src/config/setup.cfg
 .deps
 .libs
 

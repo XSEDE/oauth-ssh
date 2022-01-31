@@ -53,8 +53,42 @@ $(OAUTH_SSH): $(VENV_ROOT)
 $(NOSETESTS): $(VENV_ROOT)
 	$(PIP) install nose
 
+#
+# _check_release warns if we are building a release but either we
+# are not on a tag or the tree is dirty.
+#
 
-release: $(VENV_ROOT)
+define DIRTY_RELEASE
+###############################################################################
+# WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNIG WARNING
+#
+# This release build is not on a release tag. Its version will be modified to
+# use the .dev suffix.
+#
+# Do not use in production. Do not distribute.
+###############################################################################
+endef
+export DIRTY_RELEASE
+
+RELEASE_TAG=$(shell \
+	git describe --tags --match 'CLIENT_*' | \
+	sed 's/\(CLIENT_[0-9]\+\.[0-9]\+\).*/\1/'\
+)
+
+_check_release:
+	@git diff --quiet $(RELEASE_TAG) -- . > /dev/null; \
+	if [ $$? != 0 ]; \
+	then \
+		echo "$$DIRTY_RELEASE"; \
+		sed -i '0,/^\(version\s*=\s*[0-9]\+\.[0-9]\+\).*/s//\1.dev/' setup.cfg; \
+	fi
+
+release: _check_release $(VENV_ROOT)
+	$(PIP) install build
+	# --no-isolation avoids a conflict with virtualenv's bad site.py
+	$(PYTHON_EXE) -m build --no-isolation
+
+release: _check_release $(VENV_ROOT)
 	$(PIP) install wheel
 	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py bdist_wheel --universal
 
@@ -63,4 +97,4 @@ clean:
 	rm -rf $(VENV_NAME)
 	find . -name '*pyc' -exec rm {} \;
 
-.PHONY: develop test
+.PHONY: develop test clean _check_release

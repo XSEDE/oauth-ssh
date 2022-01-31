@@ -1,0 +1,24 @@
+[metadata]
+name = @PACKAGE_NAME@-config
+version = @PACKAGE_VERSION@@PACKAGE_RELEASE_TAG@
+description = SSH with OAuth
+url = @PACKAGE_URL@
+author_email = @PACKAGE_BUGREPORT@
+keywords = oauth, ssh
+license = Apache License v2.0
+classifiers =
+    Intended Audience :: System Administrators
+    Operating System :: POSIX
+    Natural Language :: English
+    Programming Language :: Python :: 3.6
+
+[options]
+packages = @PACKAGE_NAME@_config
+install_requires =
+    requests
+    click >= 6.7,<7.0
+python_requires = >=3.6
+
+[options.entry_points]
+console_scripts =
+    oauth-ssh-config=oauth_ssh_config.oauth_ssh_config:entry_point

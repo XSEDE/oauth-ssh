@@ -8,7 +8,7 @@
 Name:     oauth-ssh
 Summary:  SSH with OAuth
 Version:  @PACKAGE_VERSION@
-Release:  1%{?dist}
+Release:  1%{?dist}@PACKAGE_RELEASE_TAG@
 License:  Proprietary
 Group:    Applications/Internet
 Source:   %{_name}-%{version}.tar.gz
