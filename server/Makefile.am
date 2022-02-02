@@ -1,7 +1,7 @@
 SUBDIRS = src/pam src/config man/
 
 oauthsshconfdir = $(sysconfdir)/oauth_ssh
-oauthsshconf_DATA = data/globus-ssh.conf data/globus-acct-map
+oauthsshconf_DATA = data/oauth-ssh.conf data/globus-acct-map
 
 doc_DATA = data/oauth-ssh.te
 

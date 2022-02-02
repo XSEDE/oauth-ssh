@@ -106,7 +106,7 @@ rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/oauth-ssh.te
 # Manpage and oauth-ssh.pp
 /usr/share/*
 %config(noreplace) %{_sysconfdir}/oauth_ssh/globus-acct-map
-%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/oauth_ssh/globus-ssh.conf
+%config(noreplace) %attr(0600,root,root) %{_sysconfdir}/oauth_ssh/oauth-ssh.conf
 
 #
 # install/uninstall sections

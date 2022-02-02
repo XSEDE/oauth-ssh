@@ -70,7 +70,7 @@ Globus Auth. Visit
 5.  Click "Generate a New Client Secret", fill out the form.
 
 6.  Save the client_id and client_secret values for use in the
-    globus-ssh.conf file later.
+    oauth-ssh.conf file later.
 
 7.  It is also recommended that you add other appropriate users in your
     organization as administrators of the project for the sake of
@@ -96,9 +96,9 @@ Then, install the oauth-ssh server packages:
 
     $ sudo yum install oauth-ssh
 
-## Configure /etc/oauth_ssh/globus-ssh.conf
+## Configure /etc/oauth_ssh/oauth-ssh.conf
 
-Edit /etc/oauth_ssh/globus-ssh.conf to configure oauth-ssh.
+Edit /etc/oauth_ssh/oauth-ssh.conf to configure oauth-ssh.
 
 These first two options, `client_id` and `client_secret` allow
 oauth-ssh to communicate with Globus Auth in order to validate access
@@ -269,7 +269,7 @@ to associate the FQDN with the client ID, use oauth-ssh-config:
     # /usr/sbin/oauth-ssh-config register <fqdn>
 
 By default, oauth-ssh-config will retrieve the client_id and
-client_secret from /etc/oauth_ssh/globus-ssh.conf. You can override the ID
+client_secret from /etc/oauth_ssh/oauth-ssh.conf. You can override the ID
 and secret using the commandline options `--client-id` and
 `--client-secret`. See `oauth-ssh-config --help` for more details.
 
@@ -326,7 +326,7 @@ pam_oauth_ssh.so returns the following control values:
 To enable SciToken as a verification method:
 1. Install https://github.com/scitokens/scitokens-cpp/releases
 2. Compile the module from the source.
-3. Set allowed "issuers", uncomment "access_token" in globus-ssh.conf file
+3. Set allowed "issuers", uncomment "access_token" in oauth-ssh.conf file
 4. Install client-side normally and use SciToken to login. (Both valid SciToken and Globus Auth token will be accepted)
 
 Payload format for Scitokens:
