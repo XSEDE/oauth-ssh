@@ -15,10 +15,11 @@ setup(
     python_requires='>=3.5',
 
     install_requires=[
-        'requests',
-        'click>=7.0',
-        'cryptography',
-        'paramiko',
+        # >= 2.4.0 doesn't accept the json keyword in put requests
+        'requests>=2.5.0,<3',
+        'click>=7.0,<8',
+        # paramiko >= 2.4 creates CryptographyDeprecationWarning
+        'paramiko>=2.5.0,<3',
     ],
 
     entry_points='''
@@ -33,10 +34,10 @@ setup(
         "Intended Audience :: End Users/Desktop",
         "Operating System :: POSIX",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
 )
