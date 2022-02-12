@@ -69,6 +69,27 @@ get_introspect_resource(const struct config * config, const char * token)
 		       reply_body);
 		goto cleanup;
 	}
+
+	// Verify that the response includes a non empty identities_set. The
+	// field is optional so the parser won't care if its missing.
+	if (!introspect->identities_set || !introspect->identities_set[0])
+	{
+		logger(LOG_TYPE_ERROR, "The introspect response is missing the 'identities_set'.");
+		introspect_fini(introspect);
+		introspect = NULL;
+		goto cleanup;
+	}
+
+	// Verify that the response includes a session_info. The field is
+	// optional so the parser won't care if its missing.
+	if (!introspect->session_info)
+	{
+		logger(LOG_TYPE_ERROR, "The introspect response is missing 'session_info'.");
+		introspect_fini(introspect);
+		introspect = NULL;
+		goto cleanup;
+	}
+
 cleanup:
 	free(request_body);
 	free(request_url);
@@ -82,10 +103,10 @@ char *
 build_id_list(const struct introspect * introspect)
 {
 	char * list = NULL;
-
 	for (int i = 0; introspect->identities_set[i]; i++)
 	{
-		if (list) append(&list, ",");
+		if (list)
+			append(&list, ",");
 		append(&list, introspect->identities_set[i]);
 	}
 

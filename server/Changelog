@@ -1,0 +1,5 @@
+Version 0.11: unreleased
+	- Added support for multi-factor authentication
+
+Version 0.10: Initial release
+	- Supports Globus Auth

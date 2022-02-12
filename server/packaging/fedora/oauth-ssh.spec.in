@@ -96,10 +96,10 @@ rm -f ${RPM_BUILD_ROOT}%{_docdir}/%{name}-%{version}/oauth-ssh.te
 #
 %files
 %defattr(-,root,root,-)
-%{_docdir}/%{name}-%{version}/oauth-ssh.pp
 %{_libdir}/security/pam_oauth_ssh.*
 /usr/lib/*
 /usr/sbin/*
+# Manpage and oauth-ssh.pp
 /usr/share/*
 %config(noreplace) %{_sysconfdir}/oauth_ssh/globus-acct-map
 %config(noreplace) %attr(0600,root,root) %{_sysconfdir}/oauth_ssh/globus-ssh.conf

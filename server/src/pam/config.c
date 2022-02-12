@@ -90,6 +90,16 @@ check_is_set(const char * key, bool is_set)
     return success;
 }
 
+static int
+convert_bool(const char * value)
+{
+	if (strcasecmp(value, "true") == 0)
+	    return 1;
+	if (strcasecmp(value, "false") == 0)
+	    return 0;
+	return -1;
+}
+
 static status_t
 parse_file(struct config * config)
 {
@@ -107,6 +117,7 @@ parse_file(struct config * config)
     bool idp_suffix_set = false;
     bool client_id_set = false;
     bool timeout_set = false;
+    bool mfa_set = false;
 
     status_t status = failure;
     while (read_next_pair(fptr, &key, &values))
@@ -164,6 +175,25 @@ parse_file(struct config * config)
 
             config->authentication_timeout = atol(values[0]);
             timeout_set = true;
+        } 
+        else
+        if (strcmp(key, "mfa") == 0)
+        {
+            status = validate_single(key, values, mfa_set);
+            if (status != success)
+                goto cleanup;
+
+            config->mfa = convert_bool(values[0]);
+            if (config->mfa == -1)
+            {
+                logger(LOG_TYPE_ERROR,
+                       "Illegal value '%s' for mfa configuration option",
+                       values[0],
+                       CONFIG_DEFAULT_FILE);
+                goto cleanup;
+            }
+
+            mfa_set = true;
         } 
 #ifdef WITH_SCITOKENS
         else

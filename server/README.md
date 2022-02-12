@@ -207,26 +207,34 @@ consequence.
 
 ### High Assurance
 
-The following two options allow the service administrator to impose
+The following three options allow the service administrator to impose
 additional requirements upon the authentication performed by the end
 user when authorizing their SSH client to access the local SSH service.
 By using these options, the administrator will have an increased level
 of confidence that the access request originated from the actual
 authorized user.
 
-### (Optional) Requring Use of Specific Identity Providers
+### (Optional) Requiring Use of Specific Identity Providers
 
   - permitted_idps idp1 [idp2]  
     List of identity providers a user must choose from to authenticate
     to during authorization prior to accessing the local SSH service.
 
-### (Optional) Requring Reauthentication on a Given Cadence
+### (Optional) Requiring Reauthentication on a Given Cadence
 
   - authentication_timeout <minutes>  
     Number of minutes before a user is required to reauthenticate with
     the selected identity provider. If permitted_idps is specified, the
     authentication must occur from one of the IdPs listed there.
     Otherwise, an authentication with any IdP is sufficient.
+
+### (Optional) Requiring Multi-factor Authentication
+
+  - mfa true|false
+    Require that the user has authenticated within the current session
+    using multi-factor authentication. When used with permitted_idps, the user
+    must use mfa with one of the permitted_idps to successfully login. Defaults
+    to 'false'.
 
 ## Register the service FQDN with Globus Auth
 

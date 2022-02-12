@@ -14,62 +14,73 @@
 #include "json.h"
 #include "debug.h" // always last
 
+/*
+ * Parse token introspect results. See introspect.h for details on which members
+ * are required and which are optional.
+ */
+
 typedef enum { success, failure } status_t;
 
-static status_t
-check_key(jobj_t * jobj, const char * key, json_type jtype)
-{
-	if (!jobj_key_exists(jobj, key))
-	{
-		logger(LOG_TYPE_ERROR,
-		       "Introspect record is missing required key '%s'", key);
-		return failure;
-	}
+enum { required = true, optional = false};
 
-	if (jobj_get_type(jobj, key) != jtype)
-	{
-		logger(LOG_TYPE_ERROR,
-		       "Introspect record has wrong type for required key '%s'", key);
-		return failure;
-	}
-	return success;
-}
+typedef status_t (*func_t)(jobj_t * jobj, void * member_ptr);
 
-typedef status_t (*func_t)(jobj_t * jobj, void * value);
+#define GET_CONTAINER(j, i, key, type, required) \
+     get_value(j, #key, json_type_##type, &i->key, get_##key, required)
 
-#define GET_CONTAINER(j, i, key, type) \
-     get_value(j, #key, json_type_##type, &i->key, get_##key)
-
-#define GET_VALUE(j, i, key, type) \
-     get_value(j, #key, json_type_##type, &i->key, NULL)
+#define GET_VALUE(j, i, key, type, required) \
+     get_value(j, #key, json_type_##type, &i->key, NULL, required)
 
 static status_t
 get_value(jobj_t     * jobj,
           const char * key,
           json_type    jtype,
-          void       * value,
-          func_t       func)
+          void       * member_ptr,
+          func_t       func,
+          bool         required)
 {
-	if (check_key(jobj, key, jtype) == failure)
+	// Check if the key exists in the JSON object
+	if (!jobj_key_exists(jobj, key))
+	{
+		// It doesn't exist but we don't require it anyways
+		if (!required)
+			return success;
+
+		// It is required, so the parsing has failed
+		logger(LOG_TYPE_ERROR, "Introspect record is missing required key '%s'", key);
 		return failure;
-	const char * tmp;
+	}
+
+	// Check the element's type
+	if (jobj_get_type(jobj, key) != jtype)
+	{
+		// Special case were optional keys have value 'null'
+		if (!required && jobj_get_type(jobj, key) == json_type_null)
+			return success;
+
+		logger(LOG_TYPE_ERROR, "Introspect record has wrong type for required key '%s'", key);
+		return failure;
+	}
 
 	switch (jtype)
 	{
 	case json_type_int:
-		*(int *)value = jobj_get_int(jobj, key);
+		*(int *)member_ptr = jobj_get_int(jobj, key);
 		break;
 	case json_type_string:
-		tmp = jobj_get_string(jobj, key);
-		if (tmp) *(char **)value = strdup(tmp);
+	{
+		const char * tmp = jobj_get_string(jobj, key);
+		if (tmp)
+			*(char **)member_ptr = strdup(tmp);
 		break;
+	}
 	case json_type_boolean:
-		*(bool *)value = jobj_get_bool(jobj, key);
+		*(bool *)member_ptr = jobj_get_bool(jobj, key);
 		break;
 
 	case json_type_array:
 	case json_type_object:
-		return func(jobj_get_value(jobj, key), value);
+		return func(jobj_get_value(jobj, key), member_ptr);
 
 	case json_type_double:
 	case json_type_null:
@@ -80,10 +91,10 @@ get_value(jobj_t     * jobj,
 }
 
 status_t
-get_aud(jarr_t * jarr, void * value)
+get_aud(jarr_t * jarr, void * member_ptr)
 {
 	char ** ptr = calloc(jarr_get_length(jarr)+1, sizeof(char*));
-	*((char ***)value) = ptr;
+	*((char ***)member_ptr) = ptr;
 
 	for (int k = 0; k < jarr_get_length(jarr); k++)
 	{
@@ -98,10 +109,30 @@ get_aud(jarr_t * jarr, void * value)
 }
 
 status_t
-get_identities_set(jarr_t * jarr, void * value)
+get_amr(jarr_t * jarr, void * member_ptr)
+{
+	struct amr * amr = (struct amr *)member_ptr;
+
+	for (int k = 0; k < jarr_get_length(jarr); k++)
+	{
+		if (jarr_get_type(jarr, k) != json_type_string)
+		{
+			logger(LOG_TYPE_ERROR,
+			       "Introspect field 'identities_set' is malformed");
+			return failure;
+		}
+		const char * claim = jarr_get_string(jarr, k);
+		if (strcmp(claim, "mfa") == 0)
+			amr->mfa = true;
+	}
+	return success;
+}
+
+status_t
+get_identities_set(jarr_t * jarr, void * member_ptr)
 {
 	char ** ptr = calloc(jarr_get_length(jarr)+1, sizeof(char*));
-	*((char ***)value) = ptr;
+	*((char ***)member_ptr) = ptr;
 
 	for (int k = 0; k < jarr_get_length(jarr); k++)
 	{
@@ -117,9 +148,9 @@ get_identities_set(jarr_t * jarr, void * value)
 }
 
 status_t
-get_authentications(jobj_t * jobj, void * value)
+get_authentications(jobj_t * jobj, void * member_ptr)
 {
-	struct authentication ** a = NULL;
+	struct authentication ** a = calloc(1, sizeof(*a));
 
 	int cnt = 0;
 	json_object_object_foreach(jobj, k, v)
@@ -128,28 +159,33 @@ get_authentications(jobj_t * jobj, void * value)
 		a[cnt] = calloc(1, sizeof(**a));
 
 		a[cnt]->identity_id = strdup(k);
-		if (GET_VALUE(v, a[cnt], idp,       string) == failure ||
-		    GET_VALUE(v, a[cnt], auth_time, int)    == failure)
+		if (GET_VALUE(v, a[cnt], idp,       string, required) == failure ||
+		    GET_VALUE(v, a[cnt], auth_time, int,    required) == failure)
 		{
 			return failure;
 		}
 
+		// TODO: Not positive if this is required or optional
+		if (GET_CONTAINER(v, a[cnt], amr, array, optional)  == failure)
+			return failure;
+
 		a[++cnt] = NULL;
 	}
-	*(struct authentication ***)value = a;
+	*(struct authentication ***)member_ptr = a;
 	return success;
 }
 
 status_t
-get_session_info(jobj_t * jobj, void * value)
+get_session_info(jobj_t * jobj, void * member_ptr)
 {
 	struct session_info * s = calloc(1, sizeof(*s));
-	*(struct session_info **) value = s;
+	*(struct session_info **) member_ptr = s;
 
-	if (GET_VALUE(jobj, s, session_id, string) == failure)
+	if (GET_VALUE(jobj, s, session_id, string, required) == failure)
 		return failure;
 
-	return GET_CONTAINER(jobj, s, authentications, object);
+	// TODO: not sure if this is required or optional
+	return GET_CONTAINER(jobj, s, authentications, object, optional);
 }
 
 struct introspect *
@@ -158,31 +194,32 @@ introspect_init(jobj_t * jobj)
 	struct introspect * i = calloc(1, sizeof(struct introspect));
 	status_t status;
 
-	if ((status = GET_VALUE(jobj, i, active, boolean)) == failure)
+	if ((status = GET_VALUE(jobj, i, active, boolean, required)) == failure)
 		goto cleanup;
 
 	if (i->active == false)
 		goto cleanup;
 
-	if ((status = GET_VALUE(jobj, i, scope,     string)) == failure ||
-	    (status = GET_VALUE(jobj, i, client_id, string)) == failure ||
-	    (status = GET_VALUE(jobj, i, sub,       string)) == failure ||
-	    (status = GET_VALUE(jobj, i, username,  string)) == failure ||
-	    (status = GET_VALUE(jobj, i, iss,       string)) == failure ||
-	    (status = GET_VALUE(jobj, i, email,     string)) == failure ||
-	    (status = GET_VALUE(jobj, i, exp,       int))    == failure ||
-	    (status = GET_VALUE(jobj, i, iat,       int))    == failure ||
-	    (status = GET_VALUE(jobj, i, nbf,       int))    == failure)
+	if ((status = GET_VALUE(jobj, i, scope,     string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, client_id, string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, sub,       string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, username,  string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, iss,       string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, email,     string, required)) == failure ||
+	    (status = GET_VALUE(jobj, i, exp,       int,    required)) == failure ||
+	    (status = GET_VALUE(jobj, i, iat,       int,    required)) == failure ||
+	    (status = GET_VALUE(jobj, i, nbf,       int,    required)) == failure)
 	{
 		goto cleanup;
 	}
 
-	if ((status = GET_CONTAINER(jobj, i, aud,            array))  == failure ||
-	    (status = GET_CONTAINER(jobj, i, identities_set, array))  == failure ||
-	    (status = GET_CONTAINER(jobj, i, session_info,   object)) == failure)
+	if ((status = GET_CONTAINER(jobj, i, aud,            array,  required)) == failure ||
+	    (status = GET_CONTAINER(jobj, i, identities_set, array,  optional)) == failure ||
+	    (status = GET_CONTAINER(jobj, i, session_info,   object, optional)) == failure)
 	{
 		goto cleanup;
 	}
+
 cleanup:
 	if (status == success)
 		return i;
@@ -221,6 +258,6 @@ introspect_fini(struct introspect * i)
 			free(i->session_info->authentications);
 		}
 		free(i->session_info);
+		free(i);
 	}
-	free(i);
 }

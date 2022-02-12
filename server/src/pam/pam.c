@@ -271,7 +271,7 @@ _is_session_valid(const struct config     * config,
 	 * Security Policy Enforcement
 	 */
 
-	if (!config->permitted_idps && !config->authentication_timeout)
+	if (!config->permitted_idps && !config->authentication_timeout && !config->mfa)
 		return true;
 
 	if (!introspect->session_info || !introspect->session_info->authentications)
@@ -288,6 +288,12 @@ _is_session_valid(const struct config     * config,
 			time_t seconds_since_auth = time(NULL) - authentication->auth_time;
 			if (seconds_since_auth > (60*config->authentication_timeout))
 				continue;
+		}
+
+		if (config->mfa)
+		{
+			if (!authentication->amr.mfa)
+			    continue;
 		}
 
 		// Recent authentication with no IdP requirement
@@ -335,14 +341,12 @@ _cmd_get_security_policy(struct config * config, char ** reply)
 	                      "}"
 	                 "}";
 
-	char * tmp = sformat(rformat, sidps, stimeout);
-	*reply = base64_encode(tmp);
+	*reply = sformat(rformat, sidps, stimeout);
 
 	free(idp_list);
 	free(sidps);
 	free(stmp);
 	free(stimeout);
-	free(tmp);
 	return PAM_MAXTRIES;
 }
 
@@ -388,10 +392,7 @@ _cmd_get_account_map(struct config  * config,
 
 	if (!_is_session_valid(config, introspect, identities))
 	{
-		char * tmp = _build_error_reply("SESSION_VIOLATION",
-		                "The access token does not meet session requirements.");
-		*reply = base64_encode(tmp);
-		free(tmp);
+		*reply = _build_error_reply("SESSION_VIOLATION", "The access token does not meet session requirements.");
 		pam_status = PAM_AUTH_ERR;
 		goto cleanup;
 	}
@@ -406,12 +407,10 @@ _cmd_get_account_map(struct config  * config,
 	                    "}"
 	                "}";
 
-	char * tmp = sformat(format, acct_list?acct_list:"");
-	*reply = base64_encode(tmp);
+	*reply = sformat(format, acct_list?acct_list:"");
 
 	free_array(acct_array);
 	free(acct_list);
-	free(tmp);
 
 	pam_status = PAM_MAXTRIES;
 
@@ -490,10 +489,8 @@ _cmd_login(pam_handle_t   * pam,
 
 		 if (!_is_session_valid(config, introspect, identities))
 		 {
-			 char * tmp = _build_error_reply("SESSION_VIOLATION",
+			 *reply = _build_error_reply("SESSION_VIOLATION",
 					 "The access token does not meet session requirements.");
-			 *reply = base64_encode(tmp);
-			 free(tmp);
 			 pam_status = PAM_AUTH_ERR;
 			 goto cleanup;
 		 }
@@ -595,6 +592,8 @@ _process_command(pam_handle_t  * pam,
 
 	if (op)
 	{
+		logger(LOG_TYPE_DEBUG, "OP: %s", op);
+
 		if (strcmp(op, "get_security_policy") == 0)
 		{
 			pam_status = _cmd_get_security_policy(config, reply);
@@ -612,6 +611,15 @@ _process_command(pam_handle_t  * pam,
 			                                "Unknown command.");
 			*reply = base64_encode(tmp);
 			free(tmp);
+		}
+
+		logger(LOG_TYPE_DEBUG, "REPLY: %s", *reply ? *reply : "NONE");
+
+		if (*reply)
+		{
+			char * encoded_reply = base64_encode(*reply);
+			free(*reply);
+			*reply = encoded_reply;
 		}
 	}
 	else

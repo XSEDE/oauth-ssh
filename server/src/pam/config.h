@@ -17,6 +17,7 @@ struct config {
 	// Session support
 	char ** permitted_idps;
 	int     authentication_timeout;
+	bool    mfa;
 
 	// 'Hidden' options set in PAM config file
 	char *  environment; // default 'production'

@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([oauth_ssh], [0.10])
+AC_INIT([oauth_ssh], [0.11])
 
 AC_CONFIG_MACRO_DIR([m4])
 
