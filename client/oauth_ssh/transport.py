@@ -97,13 +97,36 @@ class CmdInjectHandler():
 
     def __call__(self, title, instructions, prompt_list):
         if self._state == 0:
+            # On our first call, we are looking for PROMPT so we can insert our _command.
+            # The inputs look like:
+            # 
+            # title:  ""
+            # instructions: ""
+            # prompt_list: [('Enter your OAuth token: ', False)]
             if len(prompt_list) > 0:
                 if prompt_list[0][0] == PROMPT:
                     self._state = 1
                     return [self._command]
         elif self._state == 1:
-            self._reply = instructions
-            self._state = 0
+            # On the second call, we are looking for a response to our command.
+            if instructions:
+                # Success, we expect the success message in 'instructions'.
+                self._reply = instructions
+                self._state = 0
+            elif prompt_list:
+                # Failure, we expect the response to be in prompt_list
+
+                # Example of a failed login response:
+                #
+                # title: ""
+                # instructions: ""
+                # prompt_list: [('<base64-encoded-reply>\nPassword: ', False)]
+                self._reply = prompt_list[0][0].split('\n')[0]
+                self._state = 0
+            else:
+                # Successful login, instructions and reply are None (or "")
+                # title:  instructions:  prompt_list: []
+                self._state = 0
         return []
 
 def decode_reply(reply):
@@ -166,13 +189,20 @@ class Transport(paramiko.transport.Transport):
                 pass
 
     def send_command(self, command, account):
+        # XXX The logic in send_command() and CmdInjectHandler should be moved from
+        # this file and into a location closer to the actul command so that empty
+        # replies can be interpreted more cleanly.
         handler = CmdInjectHandler(command)
         try:
             self.auth_interactive(account, handler)
         except paramiko.AuthenticationException as e:
-            # Authentication errors are always expected to generate JSON replies
+            # When reply is None, that indicates that something is misconfigured on
+            # the SSH service
             if handler._reply is None:
                 raise AuthorizationFailure()
+            # When reply is "", that indicates successful login; the pam module can not
+            # respond to successful login because it will come out with the MOTD which
+            # would not work well for clients that pass the token themselves.
             reply = decode_reply(handler._reply)
             if 'error' in reply and 'code' in reply['error']:
                 if reply['error']['code'] == 'SESSION_VIOLATION':
@@ -181,4 +211,3 @@ class Transport(paramiko.transport.Transport):
                     raise InvalidToken()
                 raise UnexpectedSSHReply(reply)
             return reply
-

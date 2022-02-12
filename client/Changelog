@@ -1,4 +1,5 @@
 Version 0.14: Unreleased
 	- Updated client dependencies
+	- Fixes for oauth-ssh handling of service responses
 
 Version 0.13: Initial release
