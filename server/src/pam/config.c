@@ -122,6 +122,18 @@ parse_file(struct config * config)
     status_t status = failure;
     while (read_next_pair(fptr, &key, &values))
     {
+	if (strcmp(key, "auth_method") == 0)
+	{
+
+	    char ** save_ptr = config->auth_method;
+            config->auth_method = merge_values(config->auth_method,
+                                                  values);
+	    free_array(save_ptr);
+	}
+        else
+        //////
+        // Globus Auth Section
+        //////
         if (strcmp(key, "client_id") == 0)
         {
             status = validate_single(key, values, client_id_set);
@@ -159,7 +171,7 @@ parse_file(struct config * config)
             free_array(save_ptr);
         }
         else
-       if (strcmp(key, "permitted_idps") == 0)
+        if (strcmp(key, "permitted_idps") == 0)
         {
             char ** save_ptr = config->permitted_idps;
             config->permitted_idps = merge_values(config->permitted_idps,
@@ -195,23 +207,15 @@ parse_file(struct config * config)
 
             mfa_set = true;
         }
-#ifdef WITH_SCITOKENS
         else
+        //////
+        // SciTokens Section
+        //////
 	if (strcmp(key, "issuers") == 0)
 	{
 
 	    char ** save_ptr = config->issuers;
             config->issuers = merge_values(config->issuers,
-                                                  values);
-	    free_array(save_ptr);
-	}
-#endif //SCITOKENS
-        else
-	if (strcmp(key, "auth_method") == 0)
-	{
-
-	    char ** save_ptr = config->auth_method;
-            config->auth_method = merge_values(config->auth_method,
                                                   values);
 	    free_array(save_ptr);
 	}
@@ -227,18 +231,52 @@ parse_file(struct config * config)
         }
     }
 
-    if ((status = check_is_set("client_id", client_id_set)) == failure)
-        goto cleanup;
-    if ((status = check_is_set("client_secret", client_secret_set)) == failure)
-        goto cleanup;
-
-    if (!config->idp_suffix && !config->map_files)
+    if (!config->auth_method)
     {
-        logger(LOG_TYPE_ERROR,
-            "At least one of 'idp_suffix' or 'map_file' must be defined in  %s",
-             CONFIG_DEFAULT_FILE);
+        logger(LOG_TYPE_ERROR, "Missing value for auth_method in %s", CONFIG_DEFAULT_FILE);
         status = failure;
         goto cleanup;
+    }
+
+    for (int i = 0; config->auth_method[i]; i++)
+    {
+        if (strcmp(config->auth_method[i], "globus_auth") == 0)
+            continue;
+
+        if (strcmp(config->auth_method[i], "scitokens") == 0)
+        {
+#ifndef WITH_SCITOKENS
+            logger(LOG_TYPE_ERROR,
+                   "SciTokens used in auth_method but not compiled with scitokens support");
+            status = failure;
+            goto cleanup;
+#endif /* WITH_SCITOKENS */
+            continue;
+        }
+
+        logger(LOG_TYPE_ERROR,
+               "Invalid value '%s' for auth_method in %s",
+               config->auth_method[i],
+               CONFIG_DEFAULT_FILE);
+        status = failure;
+        goto cleanup;
+    }
+
+    if (config_auth_method(config, GLOBUS_AUTH))
+    {
+        if ((status = check_is_set("client_id", client_id_set)) == failure)
+            goto cleanup;
+        if ((status = check_is_set("client_secret", client_secret_set)) == failure)
+            goto cleanup;
+
+        if (!config->idp_suffix && !config->map_files)
+        {
+            logger(LOG_TYPE_ERROR,
+                "At least one of 'idp_suffix' or 'map_file' must be defined in %s",
+                 CONFIG_DEFAULT_FILE);
+            status = failure;
+            goto cleanup;
+        }
     }
 
     status = success;
@@ -292,6 +330,23 @@ config_fini(struct config * config)
 		free_array(config->map_files);
 		free_array(config->permitted_idps);
 		free(config->environment);
+		free_array(config->issuers);
+		free_array(config->auth_method);
 	}
 	free(config);
+}
+
+// return true if the module is configured for the auth method,
+// false otherwise
+bool
+config_auth_method(struct config * config, auth_method_t auth_method)
+{
+	for (int i = 0; config->auth_method[i]; i++)
+	{
+		if (auth_method == GLOBUS_AUTH && strcmp(config->auth_method[i], "globus_auth") == 0)
+		    return true;
+		if (auth_method == SCITOKENS && strcmp(config->auth_method[i], "scitokens") == 0)
+		    return true;
+	}
+	return false;
 }

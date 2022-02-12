@@ -1,4 +1,10 @@
-# Server-Side Installation
+# OAuth SSH Server Side Components
+:toc:
+:toc-placement: manual
+:toclevels: 3
+:numbered:
+
+## Introduction
 
 The `oauth-ssh` server package enables federated identity authorization
 within the SSH service. It provides a PAM module which allows for
@@ -7,7 +13,7 @@ institutional boundaries. This permits the service administrator to
 authorize login access to a system based upon known local identities (ie
 `johndoe@example.com`) while permitting the end user to authenticate as
 the linked identity of their choice (ie `jd@foo.org`). This decoupling
-for a simpler authorization scheme.
+provides a simpler authorization scheme.
 
 The PAM module also allows the service administrator to place additional
 assurances on the user’s session in order to comply with local site
@@ -18,16 +24,149 @@ authenticated to an identity provider within a recent timeframe or (3)
 both options 1&2. This gives the service administrator a higher
 assurance that the connecting user is infact the authorized user.
 
-Currently this code works against the Globus Auth authorization service.
+Currently this code works against the Globus Auth authorization service and
+optional SciTokens support.
 
-## Supported Linux Distributions
+## Installation
+
+### Supported Linux Distributions
 
 The oauth-ssh server packages are currently supported on the following
 Linux distributions:
 
   - CentOS 7
 
-## Register the SSH Service on Globus developers console
+### Prebuilt RPM Installation on CentOS 7
+
+> NOTE:
+>
+> SciTokens support requires building the packaging from source. See <<custom-rpm-installation>>.
+
+Add the EPEL and XSEDE repositories to your package management system:
+
+    $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    $ sudo yum install http://software.xsede.org/development/repo/repos/XSEDE-Development-config.centos-7-1.noarch.rpm
+    $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-XSEDE-Development
+
+Then, install the oauth-ssh server packages:
+
+    $ sudo yum install oauth-ssh
+
+[[custom-rpm-installation]]
+### Custom RPM Installation
+
+All build configurations include Globus Auth support. SciTokens support requires a special
+build, see <<rpm-build-with-scitokens-support>>.
+
+> NOTE:
+>
+> When building releases, if the source tree is not clean or is not on a release tag,
+> the built RPM will have a '.dev' suffix added to it.
+
+#### Standard RPM Build (Globus Auth Support Only)
+
+This command builds the RPM with options that match the official release. The RPM can
+be found in `./RPMS/x86_64/`.
+
+    $ make -f Makefile.bootstrap release
+
+[[rpm-build-with-scitokens-support]]
+#### RPM Build with SciTokens Support
+
+To enable SciTokens as a verification method:
+
+> NOTE:
+>
+> SciTokens is dyanmically linked to the OAuth SSH PAM module which means the PAM
+> module will need to find the SciTokens library at runtime. You will need to add SCITOKENS_INSTALL_ROOT
+> to the system library search path. See ldconfig(8).
+
+1. Install SciTokens from https://github.com/scitokens/scitokens-cpp/releases. OAuth SSH
+build support has been tested against SciTokens version 0.6.3. The following is a brief
+outline of the steps required to perform the build. For full instructions on SciTokens
+build, see https://github.com/scitokens/scitokens-cpp/.
+
+    $ wget https://github.com/Thalhammer/jwt-cpp/archive/refs/tags/v0.4.0.tar.gz
+    $ tar xvf v0.4.0.tar.gz
+    $ wget https://github.com/scitokens/scitokens-cpp/releases/download/v0.6.3/scitokens-cpp-0.6.3.tar.gz
+    $ tar xvf scitokens-cpp-0.6.3.tar.gz
+    $ mkdir scitokens-cpp-0.6.3/build
+    $ cd scitokens-cpp-0.6.3/build
+    $ export SCITOKENS_INSTALL_ROOT=/usr/local/scitokens
+    $ JWT_CPP_DIR=../../jwt-cpp cmake --install-prefix ${SCITOKENS_INSTALL_ROOT} ..
+    $ make
+    $ make install
+
+2. Build the custom RPM with options to configure SciTokens.
+
+    $ CFLAGS="-I${SCITOKENS_INSTALL_ROOT}/include"  \
+        LDFLAGS="-L${SCITOKENS_INSTALL_ROOT}/lib64" \
+        CONFIGURE_OPTS=--enable-scitokens \
+        make -f Makefile.bootstrap release
+
+#### Installation of Custom RPM on CentOS 7
+
+Add the EPEL repository to your package management system:
+
+    $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+
+Then, install the oauth-ssh server packages:
+
+    $ sudo yum install ./RPMS/x86_64/oauth-ssh-0.10-1.el7.dev.x86_64.rpm
+
+## Configuration
+
+### Configure SSHD to use PAM
+
+Set the following values in /etc/ssh/sshd_config:
+
+1.  Set `UsePAM` to `yes`
+
+2.  Set `ChallengeResponseAuthentication` to `yes`
+
+Restart sshd:
+
+    # systemctl restart sshd.service
+
+### Configure PAM to Use OAuth SSH
+
+You must configure PAM to use pam_oauth_ssh.so for sshd authentication.
+The example below illustrates the modifications to PAM necessary on a
+fresh EL7 installation. Your installation may already have modifications
+to PAM in order to implement your site security policy. In that case,
+this example should serve as a reference and you are strongly encouraged
+to read PAM documentation (pam.conf(5)) before proceeding.
+
+In order to route SSH authentication requests to pam_oauth_ssh.so, replace
+the 'auth' directives in /etc/pam.d/sshd with:
+
+    auth        required      pam_sepermit.so
+    auth        required      pam_env.so
+    auth        [success=done maxtries=die new_authtok_reqd=done default=ignore]    pam_oauth_ssh.so
+    auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
+    auth        required      pam_deny.so
+
+pam_oauth_ssh.so returns the following control values:
+
+  - success  user has successfully authenticated
+
+  - authinfo_unavail  unable to reach Globus Auth
+
+  - auth_err  an unexpected error has occurred
+
+  - maxtries  a `globus-mapping` request was processed successfully
+
+  - user_unknown  the authenticated user requested an unmapped or non existent account
+
+> NOTE:
+>
+> When the requested account is unknown, sshd will reprompt the user
+> with the OAuth token prompt in order to avoid disclosing
+> available accounts. This is by design for OpenSSH and is unavoidable.
+
+### Configure for use with Globus Auth Tokens
+
+#### Register the SSH Service on Globus developers console
 
 In order for oauth-ssh to accept access tokens and perform account
 mapping, it is first necessary to register this SSH installation with
@@ -78,25 +217,13 @@ Globus Auth. Visit
     of your Globus Project should any one project administrator leave
     your organization.
 
-> **Note**
+> NOTE:
 >
 > Each new SSH service requires a new Globus app registration, with its
 > own client id and client secret. These can be within the same project
 > or in different projects.
 
-## Installation on CentOS 7
-
-Add the EPEL and XSEDE repositories to your package management system:
-
-    $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    $ sudo yum install http://software.xsede.org/development/repo/repos/XSEDE-Development-config.centos-7-1.noarch.rpm
-    $ sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-XSEDE-Development
-
-Then, install the oauth-ssh server packages:
-
-    $ sudo yum install oauth-ssh
-
-## Configure /etc/oauth_ssh/oauth-ssh.conf
+#### Configure /etc/oauth_ssh/oauth-ssh.conf
 
 Edit /etc/oauth_ssh/oauth-ssh.conf to configure oauth-ssh.
 
@@ -125,7 +252,7 @@ account from all accounts returned from either option.
     Path to a text file that maps Globus identities to local users. This
     option may be used more than once.
 
-### (Optional) IdP Suffix Account Mapping
+#### (Optional) IdP Suffix Account Mapping
 
 When an identity provider (IdP) registers with Globus Auth, they are
 assigned a unique suffix (ex. example.com) to identify identities issued
@@ -152,7 +279,7 @@ would be chosen because of the matching IdP issuer, '@example.com' IdP
 suffix would be dropped, and 'joe' would be an allowed local account
 name.
 
-### (Optional) Map File Account Mapping
+#### (Optional) Map File Account Mapping
 
 When the config option `map_file` is enabled, the value is the absolute
 path to a text file that contains mappings, one per line, from Globus
@@ -205,7 +332,7 @@ search the map file for a matching `<globus-account-username>` or
 mapping; ordering of entries within the file does not have any
 consequence.
 
-### High Assurance
+#### High Assurance
 
 The following three options allow the service administrator to impose
 additional requirements upon the authentication performed by the end
@@ -214,13 +341,13 @@ By using these options, the administrator will have an increased level
 of confidence that the access request originated from the actual
 authorized user.
 
-### (Optional) Requiring Use of Specific Identity Providers
+#### (Optional) Requiring Use of Specific Identity Providers
 
   - permitted_idps idp1 [idp2]
     List of identity providers a user must choose from to authenticate
     to during authorization prior to accessing the local SSH service.
 
-### (Optional) Requiring Reauthentication on a Given Cadence
+#### (Optional) Requiring Reauthentication on a Given Cadence
 
   - authentication_timeout <minutes>
     Number of minutes before a user is required to reauthenticate with
@@ -228,7 +355,7 @@ authorized user.
     authentication must occur from one of the IdPs listed there.
     Otherwise, an authentication with any IdP is sufficient.
 
-### (Optional) Requiring Multi-factor Authentication
+#### (Optional) Requiring Multi-factor Authentication
 
   - mfa true|false
     Require that the user has authenticated within the current session
@@ -236,7 +363,7 @@ authorized user.
     must use mfa with one of the permitted_idps to successfully login. Defaults
     to 'false'.
 
-## Register the service FQDN with Globus Auth
+#### Register the service FQDN with Globus Auth
 
 In order for users of the oauth-ssh client to connect and authorize to
 your SSH service, you must associate a fully qualified domain name
@@ -273,65 +400,11 @@ client_secret from /etc/oauth_ssh/oauth-ssh.conf. You can override the ID
 and secret using the commandline options `--client-id` and
 `--client-secret`. See `oauth-ssh-config --help` for more details.
 
-## Configure SSHD to use PAM
+### Configure for use with SciTokens
 
-Set the following values in /etc/ssh/sshd_config:
-
-1.  Set `UsePAM` to `yes`
-
-2.  Set `ChallengeResponseAuthentication` to `yes`
-
-Restart sshd:
-
-    # systemctl restart sshd.service
-
-## Configure PAM to Use OAuth SSH
-
-You must configure PAM to use pam_oauth_ssh.so for sshd authentication.
-The example below illustrates the modifications to PAM necessary on a
-fresh EL7 installation. Your installation may already have modifications
-to PAM in order to implement your site security policy. In that case,
-this example should serve as a reference and you are strongly encouraged
-to read PAM documentation (pam.conf(5)) before proceeding.
-
-In order to route SSH authentication requests to pam_oauth_ssh.so, replace
-the 'auth' directives in /etc/pam.d/sshd with:
-
-    auth        required      pam_sepermit.so
-    auth        required      pam_env.so
-    auth        [success=done maxtries=die new_authtok_reqd=done default=ignore]    pam_oauth_ssh.so
-    auth        requisite     pam_succeed_if.so uid >= 1000 quiet_success
-    auth        required      pam_deny.so
-
-pam_oauth_ssh.so returns the following control values:
-
-  - success  user has successfully authenticated
-
-  - authinfo_unavail  unable to reach Globus Auth
-
-  - auth_err  an unexpected error has occurred
-
-  - maxtries  a `globus-mapping` request was processed successfully
-
-  - user_unknown  the authenticated user requested an unmapped or non existent account
-
-> **Note**
->
-> When the requested account is unknown, sshd will reprompt the user
-> with the OAuth token prompt in order to avoid disclosing
-> available accounts. This is by design for OpenSSH and is unavoidable.
-
-## SciTokens
-
-To enable SciToken as a verification method:
-1. Install https://github.com/scitokens/scitokens-cpp/releases
-2. Compile the module from the source.
+#### Configure /etc/oauth_ssh/oauth-ssh.conf
 3. Set allowed "issuers", uncomment "access_token" in oauth-ssh.conf file
-4. Install client-side normally and use SciToken to login. (Both valid SciToken and Globus Auth token will be accepted)
-
-Payload format for Scitokens:
-  "scope": “ssh:username",
-  "aud": "demo.scitokens.org"
+4. Install client-side normally and use SciTokens to login. (Both valid SciTokens and Globus Auth token will be accepted)
 
 ## Developer Overview
 
@@ -369,4 +442,3 @@ OAuth SSH relies on the [cmocka](https://cmocka.org/) testing library. CMOCKA is
 7. Create a pull request. Make sure the subject includes `Closes #<issue_id>` in the description.
 8. Submit the pull request.
 9. When approving the pull request, use `rebase and commit`. Reject any pull requests that can't merge cleanly.
-

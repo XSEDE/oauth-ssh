@@ -77,13 +77,14 @@ _build_json_list(const char * const * array)
 static char *
 _build_error_reply(const char * code, const char * description)
 {
-	return sformat(
-				"{"
-					"\"error\": {"
-						"\"code\": \"%s\","
-						"\"description\": \"%s\""
-					"}"
-				"}", code, description);
+	return sformat("{"
+	                   "\"error\": {"
+	                       "\"code\": \"%s\","
+	                       "\"description\": \"%s\""
+	                   "}"
+	               "}",
+	               code,
+	               description);
 }
 
 static struct pam_conv *
@@ -422,107 +423,174 @@ cleanup:
 	return pam_status;
 }
 
+/*
+ * Given an access token, determine if the string is _most_ _likely_ a SciToken
+ * as opposed to a Globus Auth token. Returns:
+ *   true - token is _probably_ a SciToken
+ *   false - token is not a SciToken
+ *
+ * This is a quick and dirty check; we could attempt to decode the JWT token as
+ * a JWT and return true on success, but this should be sufficient for telling
+ * Globus Auth tokens from SciTokens.
+ */
+static bool
+_is_likely_a_scitoken(const char * token)
+{
+	/*
+	 * SciTokens are JWTs, so they are base64 url encoded with '.' as
+	 * delmiters for each part. Globus Auth tokens use the base64 character
+	 * set (but not really base64-encoded because they are opaque). So here
+	 * we look for any character in the JWT character set that is outside of
+	 * the base64 url encode character set.
+	 */
+	return (strchr(token, '.') != NULL);
+}
+
+static pam_status_t
+_cmd_login_scitokens(pam_handle_t   * pam,
+                     struct config  * config,
+                     const char     * access_token)
+{
+	pam_status_t   pam_status     = PAM_AUTHINFO_UNAVAIL;
+	const char   * requested_user = NULL;
+	pam_get_user(pam, &requested_user, NULL);
+
+	// Handle the case where the module is not configured for SciTokens
+	if (!config_auth_method(config, SCITOKENS))
+	{
+		logger(LOG_TYPE_INFO,
+		       "SciToken received but this module is not configured for SciToken authorization.");
+		pam_status = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+#ifdef WITH_SCITOKENS
+	if(scitoken_verify(access_token, config, requested_user))
+	{
+		logger(LOG_TYPE_INFO,
+		       "Scitoken Identity %s authorizing as a local user",
+		       requested_user);
+		pam_status = PAM_SUCCESS;
+		goto cleanup;
+	}
+#endif //SCITOKENS
+
+	// SciTokens authorization has failed
+	pam_status = PAM_AUTH_ERR;
+
+cleanup:
+	return pam_status;
+}
+
+static pam_status_t
+_cmd_login_globus(pam_handle_t   * pam,
+                  struct config  * config,
+                  const char     * access_token,
+                  char          ** reply)
+{
+	struct client      * client         = NULL;
+	struct introspect  * introspect     = NULL;
+	struct identities  * identities     = NULL;
+	struct account_map * account_map    = NULL;
+	pam_status_t         pam_status     = PAM_AUTHINFO_UNAVAIL;
+	const char         * requested_user = NULL;
+
+	pam_get_user(pam, &requested_user, NULL);
+	*reply = NULL;
+
+	// Handle the case where the module is not configured for Globus authorization.
+	if (!config_auth_method(config, GLOBUS_AUTH))
+	{
+		logger(LOG_TYPE_INFO,
+		       "Globus Auth token received but this module is not configured for Globus authorization.");
+		pam_status = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	introspect = get_introspect_resource(config, access_token);
+	if (!introspect)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR", "An unexpected error occurred.");
+		pam_status = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	client = get_client_resource(config);
+	if (!client)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR", "An unexpected error occurred.");
+		pam_status = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	if (!_is_token_valid(introspect, client))
+	{
+		*reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	identities = get_identities_resource(config, introspect);
+	if (!identities)
+	{
+		*reply = _build_error_reply("UNEXPECTED_ERROR", "An unexpected error occurred.");
+		pam_status = PAM_AUTHINFO_UNAVAIL;
+		goto cleanup;
+	}
+
+	if (!_is_session_valid(config, introspect, identities))
+	{
+		char * tmp = _build_error_reply("SESSION_VIOLATION", "The access token does not meet session requirements.");
+		*reply = base64_encode(tmp);
+		free(tmp);
+		pam_status = PAM_AUTH_ERR;
+		goto cleanup;
+	}
+
+	account_map = account_map_init(config, identities);
+
+	if (!is_acct_in_map(account_map, requested_user))
+	{
+		pam_status = PAM_AUTH_ERR;
+		*reply = _build_error_reply("INVALID_ACCOUNT", "You cannot use that local account.");
+		goto cleanup;
+	}
+
+	logger(LOG_TYPE_INFO,
+	       "Identity %s authorized as local user %s",
+	       acct_to_username(account_map, requested_user),
+	       requested_user);
+
+	pam_status = PAM_SUCCESS;
+
+cleanup:
+	client_fini(client);
+	introspect_fini(introspect);
+	identities_fini(identities);
+	account_map_fini(account_map);
+
+	return pam_status;
+}
+
+
 static pam_status_t
 _cmd_login(pam_handle_t   * pam,
            struct config  * config,
            const char     * access_token,
            char          ** reply)
 {
-	struct client      * client      = NULL;
-	struct introspect  * introspect  = NULL;
-	struct identities  * identities  = NULL;
-	struct account_map * account_map = NULL;
-
 	*reply = NULL;
 
-	pam_status_t pam_status = PAM_AUTHINFO_UNAVAIL;
-
-	for(int i = 0;config->auth_method[i];i++)
-	{
-	    if(strcmp(config->auth_method[i],"scitokens") == 0)
-	      {
-#ifdef WITH_SCITOKENS
-		  const char * scitoken_requested_user = NULL;
-		  pam_get_user(pam, &scitoken_requested_user, NULL);
-	          if(scitoken_verify(access_token,config,scitoken_requested_user))
-	          {
-		    logger(LOG_TYPE_INFO,
-			   "Scitoken Identity %s authorizing as a local user",
-			   scitoken_requested_user);
-		    pam_status = PAM_SUCCESS;
-		    break;
-		  }
-#else
-		  logger(LOG_TYPE_INFO,
-			 "Scitokens used in auth_method but not compiled with scitokens support");
-#endif //SCITOKENS
-	      }
-	      if(strcmp(config->auth_method[i],"globus_auth") == 0)
-	      {
-
-		 introspect = get_introspect_resource(config, access_token);
-		 if (!introspect)
-		 {
-			 *reply = _build_error_reply("UNEXPECTED_ERROR",
-						     "An unexpected error occurred.");
-			 goto cleanup;
-		 }
-
-		 client = get_client_resource(config);
-		 if (!client)
-		 {
-			 *reply = _build_error_reply("UNEXPECTED_ERROR",
-						     "An unexpected error occurred.");
-			 goto cleanup;
-		 }
-
-		 if (!_is_token_valid(introspect, client))
-		 {
-			 *reply = _build_error_reply("INVALID_TOKEN", "Invalid token.");
-			 pam_status = PAM_AUTH_ERR;
-			 goto cleanup;
-		 }
-
-		 pam_status = PAM_AUTHINFO_UNAVAIL;
-		 identities = get_identities_resource(config, introspect);
-		 if (!identities) goto cleanup;
-
-		 if (!_is_session_valid(config, introspect, identities))
-		 {
-			 *reply = _build_error_reply("SESSION_VIOLATION",
-					 "The access token does not meet session requirements.");
-			 pam_status = PAM_AUTH_ERR;
-			 goto cleanup;
-		 }
-
-		 account_map = account_map_init(config, identities);
-
-		 const char * requested_user = NULL;
-		 pam_get_user(pam, &requested_user, NULL);
-
-		 if (!is_acct_in_map(account_map, requested_user))
-		 {
-			 pam_status = PAM_AUTH_ERR;
-			 *reply = _build_error_reply("INVALID_ACCOUNT",
-						     "You cannot use that local account.");
-			 goto cleanup;
-		 }
-
-		 logger(LOG_TYPE_INFO,
-			"Identity %s authorized as local user %s",
-			acct_to_username(account_map, requested_user),
-			requested_user);
-
-		 pam_status = PAM_SUCCESS;
-		 break;
-cleanup://Terminate verification flow for Globus_auth
-		client_fini(client);
-		introspect_fini(introspect);
-		identities_fini(identities);
-		account_map_fini(account_map);
-     }
-  }
-	return pam_status;
+	/*
+	 * Try to route the access token to the correct auth mechanism. We do
+	 * not try all enabled auth methods for each token because the mechanism
+	 * response to an invalid token vs the mechanisms response to an unknown
+	 * token may not be differentiable. Also, that would be slower and make
+	 * logging and error reporting more complicated.
+	 */
+	if (_is_likely_a_scitoken(access_token))
+		return _cmd_login_scitokens(pam, config, access_token);
+	return _cmd_login_globus(pam, config, access_token, reply);
 }
 
 

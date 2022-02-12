@@ -85,10 +85,10 @@ _install_release_prereqs: install_develop_prereqs
 
 _setup: install_develop_prereqs
 	[ -f configure ] || autoreconf -i
-	[ -f Makefile ] || CFLAGS="$(CFLAGS)" $(CMOCKA_OPTS) ./configure
+	[ -f Makefile ] || CFLAGS="$(_CFLAGS)" LDFLAGS="$(LDFLAGS)" ./configure $(CONFIGURE_OPTS)
 	make
 
-develop: CFLAGS=-DDEBUG -Wall -ggdb3
+develop: _CFLAGS=-DDEBUG -Wall -ggdb3 $(CFLAGS)
 develop: _setup
 	make -C src/config develop
 
@@ -120,7 +120,7 @@ _check_release:
 		sed -i 's/^##develop //' configure.ac; \
 	fi
 
-release: CFLAGS=-O3
+release: _CFLAGS=-O3 $(CFLAGS)
 release: _check_release _setup _install_release_prereqs
 	make dist
 	mkdir -p BUILD BUILDROOT RPMS SOURCES SPECS SRPMS

@@ -34,6 +34,7 @@ AM_PROG_AR
 
 LT_INIT
 
+AC_SUBST(PACKAGE_RELEASE_TAG, '')
 # This next line is modified by Makefile.bootstrap to mark development releases
 ##develop AC_SUBST(PACKAGE_RELEASE_TAG, .dev)
 

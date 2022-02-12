@@ -3,7 +3,7 @@ SUBDIRS = . test
 ACLOCAL_AMFLAGS = -I m4
 
 lib_LTLIBRARIES    = pam_oauth_ssh.la
-pam_oauth_ssh_la_LDFLAGS = -module -shared
+pam_oauth_ssh_la_LDFLAGS = -shared -module -avoid-version
 pam_oauth_ssh_la_LIBADD  = -lssl -ljson-c -lcurl -lpthread
 pam_oauth_ssh_la_SOURCES = account_map.c \
                         account_map.h \
