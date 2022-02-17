@@ -1,4 +1,4 @@
-Version 0.14: Unreleased
+Version 0.14: Thu Feb 17 17:31:41 UTC 2022
 	- Updated client dependencies
 	- Fixes for oauth-ssh handling of service responses
 
