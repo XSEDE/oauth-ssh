@@ -28,7 +28,7 @@ ifndef PYTHON_VERSION
 endif
 
 OAUTH_SSH=$(VENV_ROOT)/bin/oauth-ssh
-NOSETESTS=$(VENV_ROOT)/bin/nosetests
+PYTEST=$(VENV_ROOT)/bin/pytest
 VENV_NAME=$(shell basename $(VENV_ROOT))
 
 ifdef USING_PENV
@@ -39,8 +39,8 @@ endif
 develop: $(OAUTH_SSH)
 	@echo "Use \". $(VENV_ROOT)/bin/activate\""
 
-test: $(OAUTH_SSH) $(NOSETESTS)
-	$(NOSETESTS) -v -s
+test: $(OAUTH_SSH) $(PYTEST)
+	$(PYTEST)
 
 $(VENV_ROOT): $(PY_VER_ROOT)
 	$(CREATE_VIRTUAL_ENV) $(VENV_NAME)
@@ -50,8 +50,8 @@ $(VENV_ROOT): $(PY_VER_ROOT)
 $(OAUTH_SSH): $(VENV_ROOT)
 	$(SETUP_PY_ENV) $(PYTHON_EXE) setup.py develop
 
-$(NOSETESTS): $(VENV_ROOT)
-	$(PIP) install nose
+$(PYTEST): $(VENV_ROOT)
+	$(PIP) install pytest
 
 #
 # _check_release warns if we are building a release but either we
@@ -82,11 +82,6 @@ _check_release:
 		echo "$$DIRTY_RELEASE"; \
 		sed -i '0,/^\(version\s*=\s*[0-9]\+\.[0-9]\+\).*/s//\1.dev/' setup.cfg; \
 	fi
-
-release: _check_release $(VENV_ROOT)
-	$(PIP) install build
-	# --no-isolation avoids a conflict with virtualenv's bad site.py
-	$(PYTHON_EXE) -m build --no-isolation
 
 release: _check_release $(VENV_ROOT)
 	$(PIP) install wheel
