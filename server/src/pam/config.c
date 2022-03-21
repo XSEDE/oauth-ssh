@@ -93,22 +93,22 @@ check_is_set(const char * key, bool is_set)
 static int
 convert_bool(const char * value)
 {
-	if (strcasecmp(value, "true") == 0)
-	    return 1;
-	if (strcasecmp(value, "false") == 0)
-	    return 0;
-	return -1;
+    if (strcasecmp(value, "true") == 0)
+        return 1;
+    if (strcasecmp(value, "false") == 0)
+        return 0;
+    return -1;
 }
 
 static status_t
 parse_file(struct config * config)
 {
-	FILE * fptr = fopen(CONFIG_DEFAULT_FILE, "r");
-	if (!fptr)
-	{
-		logger(LOG_TYPE_ERROR, "Could not open %s: %m", CONFIG_DEFAULT_FILE);
-		return failure;
-	}
+    FILE * fptr = fopen(CONFIG_DEFAULT_FILE, "r");
+    if (!fptr)
+    {
+        logger(LOG_TYPE_ERROR, "Could not open %s: %m", CONFIG_DEFAULT_FILE);
+        return failure;
+    }
 
     char * key;
     char ** values;
@@ -122,14 +122,13 @@ parse_file(struct config * config)
     status_t status = failure;
     while (read_next_pair(fptr, &key, &values))
     {
-	if (strcmp(key, "auth_method") == 0)
-	{
+        if (strcmp(key, "auth_method") == 0)
+        {
 
-	    char ** save_ptr = config->auth_method;
-            config->auth_method = merge_values(config->auth_method,
-                                                  values);
-	    free_array(save_ptr);
-	}
+            char ** save_ptr = config->auth_method;
+            config->auth_method = merge_values(config->auth_method, values);
+            free_array(save_ptr);
+        }
         else
         //////
         // Globus Auth Section
@@ -211,14 +210,12 @@ parse_file(struct config * config)
         //////
         // SciTokens Section
         //////
-	if (strcmp(key, "issuers") == 0)
-	{
-
-	    char ** save_ptr = config->issuers;
-            config->issuers = merge_values(config->issuers,
-                                                  values);
-	    free_array(save_ptr);
-	}
+        if (strcmp(key, "issuers") == 0)
+        {
+	           char ** save_ptr = config->issuers;
+            config->issuers = merge_values(config->issuers, values);
+	           free_array(save_ptr);
+        }
         else
         {
             logger(LOG_TYPE_ERROR,
@@ -281,59 +278,59 @@ parse_file(struct config * config)
 
     status = success;
 cleanup:
-	fclose(fptr);
+    fclose(fptr);
     return status;
 }
 
 static status_t
 parse_args(struct config * c, int flags, int argc, const char ** argv)
 {
-	for (int i = 0; i < argc; i++)
-	{
-		if (strcmp("debug", argv[i]) == 0)
-			c->debug = true;
-		else if (strncmp("environment=", argv[i], 12) == 0)
-		{
-			if (!c->environment) // skip duplicates
-				c->environment = strdup(argv[i]+12);
-		}
-	}
-	return success;
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp("debug", argv[i]) == 0)
+            c->debug = true;
+        else if (strncmp("environment=", argv[i], 12) == 0)
+        {
+            if (!c->environment) // skip duplicates
+                c->environment = strdup(argv[i]+12);
+        }
+    }
+    return success;
 }
 
 struct config *
 config_init(int flags, int argc, const char ** argv)
 {
-	struct config * config = calloc(1, sizeof(*config));
+    struct config * config = calloc(1, sizeof(*config));
 
-	if (parse_file(config) == failure)
-		goto cleanup;
+    if (parse_file(config) == failure)
+        goto cleanup;
 
-	if (parse_args(config, flags, argc, argv) == failure)
-		goto cleanup;
+    if (parse_args(config, flags, argc, argv) == failure)
+        goto cleanup;
 
-	return config;
+    return config;
 
 cleanup:
-	config_fini(config);
-	return NULL;
+    config_fini(config);
+    return NULL;
 }
 
 void
 config_fini(struct config * config)
 {
-	if (config)
-	{
-		free(config->client_id);
-		free(config->client_secret);
-		free(config->idp_suffix);
-		free_array(config->map_files);
-		free_array(config->permitted_idps);
-		free(config->environment);
-		free_array(config->issuers);
-		free_array(config->auth_method);
-	}
-	free(config);
+    if (config)
+    {
+        free(config->client_id);
+        free(config->client_secret);
+        free(config->idp_suffix);
+        free_array(config->map_files);
+        free_array(config->permitted_idps);
+        free(config->environment);
+        free_array(config->issuers);
+        free_array(config->auth_method);
+    }
+    free(config);
 }
 
 // return true if the module is configured for the auth method,
@@ -341,12 +338,12 @@ config_fini(struct config * config)
 bool
 config_auth_method(struct config * config, auth_method_t auth_method)
 {
-	for (int i = 0; config->auth_method[i]; i++)
-	{
-		if (auth_method == GLOBUS_AUTH && strcmp(config->auth_method[i], "globus_auth") == 0)
-		    return true;
-		if (auth_method == SCITOKENS && strcmp(config->auth_method[i], "scitokens") == 0)
-		    return true;
-	}
-	return false;
+    for (int i = 0; config->auth_method[i]; i++)
+    {
+        if (auth_method == GLOBUS_AUTH && strcmp(config->auth_method[i], "globus_auth") == 0)
+            return true;
+        if (auth_method == SCITOKENS && strcmp(config->auth_method[i], "scitokens") == 0)
+            return true;
+    }
+    return false;
 }
