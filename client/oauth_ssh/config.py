@@ -38,7 +38,7 @@ def _check_permissions(path):
 
 def _load_file(path):
     _check_permissions(path)
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     config.optionxform = str # case-sensitive keys
     try:
         config.read(path)
