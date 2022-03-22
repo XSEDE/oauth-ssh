@@ -106,15 +106,33 @@ test_key_not_in_list(void ** state)
 }
 
 void
-test_suffix_match(void ** state)
+test_split_null_string(void ** state)
 {
-	assert_true(string_has_suffix("johndoe@example.com", "example.com"));
+	assert_null(split_string(NULL, " "));
 }
 
 void
-test_suffix_mismatch(void ** state)
+test_split_one_string(void ** state)
 {
-	assert_false(string_has_suffix("johndoe@example.com", "abc.com"));
+	char ** array = split_string("foo", " ");
+	assert_non_null(array);
+	assert_non_null(array[0]);
+	assert_null(array[1]);
+	assert_string_equal(array[0], "foo");
+	free_array(array);
+}
+
+void
+test_split_two_string(void ** state)
+{
+	char ** array = split_string("foo bar", " ");
+	assert_non_null(array);
+	assert_non_null(array[0]);
+	assert_non_null(array[1]);
+	assert_null(array[2]);
+	assert_string_equal(array[0], "foo");
+	assert_string_equal(array[1], "bar");
+	free_array(array);
 }
 
 /*******************************************
@@ -135,8 +153,9 @@ main()
 		{"sformat", test_sformat},
 		{"key in list", test_key_in_list},
 		{"key not in list", test_key_not_in_list},
-		{"suffix match",    test_suffix_match},
-		{"suffix mismatch", test_suffix_mismatch},
+		{"split null string", test_split_null_string},
+		{"split one string", test_split_one_string},
+		{"split two strings", test_split_two_string},
 	};
 	return cmocka_run_group_tests(tests, NULL, NULL);
 }

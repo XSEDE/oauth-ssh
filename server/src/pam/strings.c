@@ -93,16 +93,6 @@ key_in_list(const char * const list[], const char * key)
 	return false;
 }
 
-bool
-string_has_suffix(const char * string, const char * suffix)
-{
-	if (strlen(string) < strlen(suffix))
-		return false;
-
-	int offset = strlen(string) - strlen(suffix);
-	return (strcmp(string + offset, suffix) == 0);
-}
-
 void
 free_array(char ** array)
 {
@@ -111,4 +101,30 @@ free_array(char ** array)
 		free(array[i]);
 	}
 	free(array);
+}
+
+char **
+split_string(const char * string, const char * delimiter)
+{
+	if (string == NULL)
+		return NULL;
+
+	char ** array = NULL;
+	size_t length = 0;
+
+	char * str = strdup(string);
+	char * saveptr = NULL;
+	char * token = NULL;
+
+	// For each token...
+	while ((token = strtok_r(str, " ", &saveptr)))
+	{
+		str = NULL;
+
+		array = realloc(array, sizeof(char *)*(length+2));
+		array[length++] = strdup(token);
+		array[length] = NULL;
+	}
+	free(str);
+	return array;
 }

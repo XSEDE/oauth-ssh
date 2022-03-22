@@ -9,7 +9,11 @@
 
 #define CONST(type,var) (const type const *) var
 
-// delimiter is ignored when set to (int)0
+
+// Return a newly-allocated string whose contents consists of the
+// entries of strings[] delimited by 'delimiter'. Returns NULL if
+// ether strings[] or strings[0] are NULL. strings[] must be NULL-
+// terminated. 'delimiter' is ignored when set to (int)0
 char *
 join(const char * const strings[], const char delimiter);
 
@@ -20,16 +24,21 @@ append(char ** string, const char * suffix);
 void
 insert(char *** array, const char * string);
 
+// Return a newly-allocated string whose contents are built with
+// vsnprintf().
 char *
 sformat(const char * format, ...);
 
 bool
 key_in_list(const char * const * list, const char * key);
 
-bool
-string_has_suffix(const char * string, const char * suffix);
-
 void
 free_array(char ** array);
+
+// Return a newly-allocated array whose contents are the 'delimiter'-delimited
+// tokens of 'string'. Return NULL if 'string' is NULL. The elements of the
+// array are also newly-allocated. The array will be NULL-terminated.
+char **
+split_string(const char * string, const char * delimiter);
 
 #endif /* _STRINGS_H_ */

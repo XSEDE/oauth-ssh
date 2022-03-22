@@ -1,3 +1,6 @@
+Version 0.12: Prerelease
+	- Admins are no longer required to perform FQDN validation.
+
 Version 0.11: Thu Feb 17 17:25:04 UTC 2022
 	- Added support for multi-factor authentication
 	- Renamed globus-ssh.conf to oauth-ssh.conf

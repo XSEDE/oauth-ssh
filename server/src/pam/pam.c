@@ -167,54 +167,35 @@ _send_our_reply(pam_handle_t * pam, const char * reply)
 }
 
 bool
-_has_scope(char * fqdns[], const char * scopes, const char * suffix)
+_is_scope_in_array(const char * const scopes[], const char * prefix, const char * midfix, const char * suffix)
 {
-	if (!scopes) return false;
-	if (!fqdns)  return false;
+	char * desired_scope = sformat("%s/%s/%s", prefix, midfix, suffix);
+	bool found = key_in_list(scopes, desired_scope);
+	free(desired_scope);
+	return found;
+}
 
+// scopes_string is a space-delimited lis RFC7662.
+bool
+_is_scope_in_string(const char * scopes_string, char * fqdns[], const char * client_id,  const char * suffix)
+{
 	bool found = false;
+	const char * prefix = "https://auth.globus.org/scopes";
 
-	char * str  = strdup(scopes);
-	char * tmp  = str;
-	char * sptr = NULL;
+	// Split scopes_string into something easier to use
+        char ** scopes_array = split_string(scopes_string, " ");
 
-	// For each scope...
-	char * scope = NULL;
-	while ((scope = strtok_r(str, " ", &sptr)))
+	for (int i = 0; fqdns && fqdns[i]; i++)
 	{
-		str = NULL;
-
-		// Check the prefix
-		const char * prefix = "https://auth.globus.org/scopes/";
-		if (strncmp(scope, prefix, strlen(prefix)))
-			continue;
-
-		const char * slash = strchr(scope+strlen(prefix), '/');
-		if (!slash) continue;
-
-		// Check the suffix
-		if (strcmp(slash+1, suffix))
-			continue;
-
-		// Check the FQDN
-		for (int i = 0; fqdns[i]; i++)
-		{
-			// Check that the length of the FQDN's match
-			if (strlen(fqdns[i]) != (slash - (scope+(strlen(prefix)))))
-				continue;
-
-			// Check that the FQDN's match
-			if (strncmp(fqdns[i], scope+strlen(prefix), strlen(fqdns[i])))
-				continue;
-
-			// Found it
-			found = true;
-			goto cleanup;
-		}
+		found = _is_scope_in_array(CONST(char *, scopes_array), prefix, fqdns[i], suffix);
+		if (found)
+			break;
 	}
 
-	cleanup:
-	free(tmp);
+	if (found == false && client_id != NULL)
+		found = _is_scope_in_array(CONST(char *, scopes_array), prefix, client_id, suffix);
+
+	free_array(scopes_array);
 	return found;
 }
 
@@ -235,7 +216,7 @@ _is_token_valid(const struct introspect * introspect,
 	if (introspect->nbf > time(NULL))
 		return false;
 
-	if (!_has_scope(client->fqdns, introspect->scope, "ssh"))
+	if (!_is_scope_in_string(introspect->scope, client->fqdns, client->id, "ssh"))
 		return false;
 
 	return true;

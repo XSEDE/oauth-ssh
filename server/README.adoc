@@ -363,14 +363,22 @@ authorized user.
     must use mfa with one of the permitted_idps to successfully login. Defaults
     to 'false'.
 
-#### Register the service FQDN with Globus Auth
+#### (Optional) Register the service FQDN with Globus Auth
 
 In order for users of the oauth-ssh client to connect and authorize to
-your SSH service, you must associate a fully qualified domain name
+your SSH service, you should associate a fully qualified domain name
 (FQDN) with your Globus Auth client registered above. This association
 provides a mapping between the FQDN and your Auth client_id allowing
 users to initiate an authorization flow using the FQDN of your SSH
 service instead of knowing the client_id.
+
+Optionally, you may skip FQDN registration if, for example, you do not
+have the capability to create DNS TXT records or if you are just wanting to
+setup a quick OAUTH SSH demo installation. In this case, all OAUTH SSH users
+of your SSH service will need to pass the SSH service's Auth client_id to
+`oauth-ssh-token authorize <fqdn> --client-id <client_id>`. If you choose to
+skip registration, skip to the next section to continue configuring your OAUTH
+SSH service.
 
 When you register the FQDN with Globus Auth and associate it with your
 client_id, Globus Auth will verify your ownership of FQDN by retrieving
