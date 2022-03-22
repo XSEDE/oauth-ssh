@@ -1,10 +1,6 @@
 from .template import Template
 
 
-# [General.Production]
-# secret = str
-# client = str
-
 class Credential(Template):
     KEYS = {
         'client': str,

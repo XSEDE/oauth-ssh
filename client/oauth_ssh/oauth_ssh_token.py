@@ -1,9 +1,7 @@
-import base64
-import click
-import json
 import time
 
-from . import constants
+import click
+
 from . import config as Config
 from . import globus_auth as Auth
 from .account_map import AccountMap

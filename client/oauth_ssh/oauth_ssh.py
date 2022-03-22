@@ -7,9 +7,6 @@ import termios
 import getpass # get the local username for SSH logins
 
 from . import config as Config
-from . import globus_auth as Auth
-from .policy import Policy
-from .token import Token
 from .constants import *
 from .account_map import AccountMap
 from .ssh_service import SSHService

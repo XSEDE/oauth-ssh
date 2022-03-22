@@ -1,14 +1,11 @@
 import stat
 import ast
 import os
+import configparser
 
 from .constants import *
 from .exceptions import OAuthSSHError
 
-try:
-    import ConfigParser as configparser
-except ImportError:
-    import configparser
 
 class ConfigError(OAuthSSHError):
     "Base exception for all Config exceptions"""

@@ -1,30 +1,20 @@
 import os
-import sys
 import ast
 import time
 import base64
-import urllib
 import socket
 import hashlib
 import getpass
 import requests
+from urllib.parse import urlencode
 
 
 from .exceptions import OAuthSSHError
 from .credential import Credential
 from .constants import *
-from .credential import Credential
 from .token import Token
 from . import config as Config
 
-if sys.version_info.major==3:raw_input=input
-
-if sys.version_info.major==3 and sys.version_info.minor > 4:
-    from urllib.parse import urlencode as urlencode
-else:
-    from urllib import urlencode as urlencode
-
-#if sys.version[0]=="3": raw_input=input
 
 class GlobusAuthError(OAuthSSHError):
     "Base exception for all Globus Auth exceptions"""
@@ -141,8 +131,7 @@ def do_auth_code_grant(fqdn, force_login=False, identity=None):
     url = "https://" + host + '/v2/oauth2/authorize?' + urlencode(params)
 
     print('Please go to this URL and login: {0}'.format(url))
-    auth_code = raw_input(
-                    'Please enter the code you get after login here: ').strip()
+    auth_code = input('Please enter the code you get after login here: ').strip()
 
     body = {
         'code'         :  auth_code,

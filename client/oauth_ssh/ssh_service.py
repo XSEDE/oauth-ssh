@@ -1,5 +1,5 @@
-import base64
 import json
+import base64
 
 from .constants import *
 from .account_map import AccountMap
@@ -11,7 +11,7 @@ from .policy import Policy
 # Public Command Interface
 #
 ####################################################################
-class SSHService(object):
+class SSHService():
     def __init__(self, fqdn, port):
         self._fqdn = fqdn
         self._port = port

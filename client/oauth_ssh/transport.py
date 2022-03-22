@@ -1,16 +1,13 @@
 import paramiko
-import warnings
 import hashlib
 import socket
 import base64
 import json
-import sys
 import os
 
 from .exceptions import OAuthSSHError
 from .constants import *
 
-if sys.version[0]=="3": raw_input=input
 
 class UnexpectedSSHReply(OAuthSSHError):
     def __init__(self, reply):
@@ -172,8 +169,7 @@ class Transport(paramiko.transport.Transport):
 
             answer = None
             while answer not in ("yes", "y", "no", "n"):
-                answer = raw_input(
-                  "Are you sure you want to continue connecting (yes/no)? ")
+                answer = input("Are you sure you want to continue connecting (yes/no)? ")
 
             if answer in ('no', 'n'):
                 raise UnknownHostKey()

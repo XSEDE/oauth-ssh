@@ -1,7 +1,6 @@
 import ast
 import sys
 
-if sys.version_info.major==3:unicode=str
 
 class Template(dict):
     def __init__(self, template={}, values={}):
@@ -27,7 +26,7 @@ class Template(dict):
                 if type(value) is not int and type(value) is not str:
                     bad_value = True
             elif expected_type is str:
-                if type(value) is not str and type(value) is not unicode:
+                if type(value) is not str:
                     bad_value = True
             elif expected_type is list:
                 if type(value) is not str:
@@ -46,7 +45,7 @@ class Template(dict):
         # Last minute list validation
         if bad_value is False and value is not None and expected_type is list:
             for i in cast_value:
-                if type(i) is not str and type(i) is not unicode:
+                if type(i) is not str:
                     bad_value = True
             # Translate unicode strings
             if bad_value is True:
