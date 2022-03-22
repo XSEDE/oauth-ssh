@@ -42,8 +42,7 @@ class AuthorizationFailure(OAuthSSHError):
 
 class InvalidToken(OAuthSSHError):
     def __init__(self):
-        msg = "The access token is invalid." \
-            + "Use `oauth-ssh-token authorize " + fqdn + "`."
+        msg = "The access token is invalid. Use `oauth-ssh-token authorize`."
         super(InvalidToken, self).__init__(msg)
 
 class UnknownHostKey(OAuthSSHError):
