@@ -10,7 +10,6 @@ import getpass
 import requests
 
 
-
 from .exceptions import OAuthSSHError
 from .credential import Credential
 from .constants import *
@@ -77,6 +76,9 @@ def _authenticated_request(method, path, **kw):
 
 
 def lookup_identity(username):
+    """
+    Converts username to identity uuid.
+    """
     path = "/v2/api/identities?" + urlencode({'usernames': username})
     identities = _authenticated_request(requests.get, path).json()
     return identities['identities'][0]['id']

@@ -89,7 +89,7 @@ def handle_errors(func):
         except OAuthSSHError as e:
             click.echo(e)
             click.get_current_context().exit(1)
-        click.get_current_context().exit(1)
+        click.get_current_context().exit(0)
     return wrapper
 
 #####################################
@@ -106,42 +106,66 @@ def oauth_ssh_token():
 # oauth-ssh-token authorize
 #
 #####################################
-@click.command('authorize',
-       short_help='Perform an interactive consent flow to get an access token.')
-@click.option('--identity', nargs=1, metavar='<id>',
-              help='Preferred Globus Auth identity to use during consent.')
-@click.option('-p', '--port', nargs=1, metavar='<port>', default=22,
-              help='Port that the SSH services runs on. Defaults to 22.')
+@click.command(
+    'authorize',
+    short_help='Perform an interactive consent flow to get an access token.'
+)
+@click.option(
+    '--client-id',
+    metavar='<uuid>',
+    type=click.UUID,
+    help=(
+        "The client_id of the target SSH service. This option is necessary if "
+        "the service's FQDN has not been registered with Globus Auth."
+    ),
+)
+@click.option(
+    '--identity',
+    nargs=1,
+    metavar='<id>',
+    help='Preferred Globus Auth identity to use during consent.'
+)
+@click.option(
+    '-p',
+    '--port',
+    nargs=1,
+    metavar='<port>',
+    default=22,
+    help='Port that the SSH services runs on. Defaults to 22.'
+)
 @click.argument('fqdn')
 @handle_errors
-def token_authorize(fqdn, port, identity):
-    # If we are going to authorize, might as well make a clean start
-    revoke_token(fqdn, 'access_token')
-    revoke_token(fqdn, 'refresh_token')
-    Config.delete_section(fqdn)
-
+def token_authorize(fqdn, port, identity, client_id):
     # Grab the policy
     policy = SSHService(fqdn, port).get_security_policy()
-    Config.save_object(fqdn, policy)
 
-    if policy['permitted_idps'] is not None:
-        if len(policy['permitted_idps']) > 0 and identity is None:
+    # if 'permitted_idps' exists, it can be None or a positive integer
+    if policy.get('permitted_idps'):
+        if len(policy.get('permitted_idps', 0)) > 1 and identity is None:
             click.echo("Use --identity to specify an account from one of "
                        + str(policy['permitted_idps']))
             click.get_current_context().exit(1)
 
     if identity is not None:
+        # Convert username to identity ID
         identity = Auth.lookup_identity(identity)
 
     # Authentication timeout
     force_login = False
-    if policy['authentication_timeout'] is not None:
-         if policy['authentication_timeout'] > 0:
-            force_login = True
+    if policy.get('authentication_timeout'):
+        force_login = True
 
-    token = Auth.do_auth_code_grant(fqdn, force_login, identity)
+    # Use client_id if it is given, otherwise fallback on fqdn
+    token = Auth.do_auth_code_grant(
+        client_id if client_id else fqdn,
+        force_login,
+        identity
+    )
+
     revoke_token(fqdn, 'access_token')
     revoke_token(fqdn, 'refresh_token')
+    Config.delete_section(fqdn)
+    Config.save_object(fqdn, policy)
     Config.save_object(fqdn, token)
 
 oauth_ssh_token.add_command(token_authorize)

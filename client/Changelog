@@ -1,3 +1,8 @@
+Version 0.15: Prerelease
+	- It is now possible to run the authorize subcommand with the SSH
+	  service's client ID, for use with SSH services that have not
+	  completed the Globus Auth FQDN validation flow.
+
 Version 0.14: Thu Feb 17 17:31:41 UTC 2022
 	- Updated client dependencies
 	- Fixes for oauth-ssh handling of service responses
