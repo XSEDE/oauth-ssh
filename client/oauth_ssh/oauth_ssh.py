@@ -4,7 +4,7 @@ import tty
 import select
 import socket
 import termios
-import getpass # get the local username for SSH logins
+import getpass  # get the local username for SSH logins
 
 from . import config as Config
 from .constants import *
@@ -28,6 +28,7 @@ def handle_errors(func):
             print(e)
             sys.exit(1)
         sys.exit(0)
+
     return wrapper
 
 
@@ -37,8 +38,9 @@ def handle_errors(func):
 #
 #####################################
 # click would not handle:
-    #  oauth-ssh -l <account> -p <port> ssh.foo.com ls -l /
+#  oauth-ssh -l <account> -p <port> ssh.foo.com ls -l /
 # so I rolled my own
+
 
 def show_help():
     print("Usage: oauth-ssh [OPTIONS] [user@]FQDN COMMAND [ARGS]...")
@@ -49,6 +51,7 @@ def show_help():
     print("  --help    Show this message and exit.")
     print("")
 
+
 def parse_args():
     args = sys.argv[1:]
 
@@ -57,27 +60,27 @@ def parse_args():
     acct_fqdn = None
     i = 0
     while i < len(args):
-        if args[i] == '-l':
+        if args[i] == "-l":
             if len(args) == i:
                 print("Missing value for option '-l'")
                 sys.exit(1)
-            account = args[i+1]
+            account = args[i + 1]
             i = i + 2
             continue
 
-        if args[i] == '-p' or args[i] == '--port':
+        if args[i] == "-p" or args[i] == "--port":
             if len(args) == i:
                 print("Missing value for option '" + args[i] + "'")
                 sys.exit(1)
-            port = args[i+1]
+            port = args[i + 1]
             i = i + 2
             continue
 
-        if args[i] == '--help' or args[i] == '-h':
+        if args[i] == "--help" or args[i] == "-h":
             show_help()
             sys.exit(1)
 
-        if args[i].startswith('-'):
+        if args[i].startswith("-"):
             print("Error: no such option: " + str(args[i]))
             sys.exit(1)
 
@@ -98,18 +101,19 @@ def parse_args():
 #
 #####################################
 
+
 @handle_errors
 def oauth_ssh():
     account, port, acct_fqdn, command = parse_args()
 
-    fqdn = acct_fqdn.split('@')[-1]
+    fqdn = acct_fqdn.split("@")[-1]
 
     # Grab the access token
     access_token = find_access_token(fqdn)
 
     # Explicit account settings : Set on command line
-    if len(acct_fqdn.split('@')) > 1:
-        account = acct_fqdn.split('@')[0]
+    if len(acct_fqdn.split("@")) > 1:
+        account = acct_fqdn.split("@")[0]
 
     # Implicit account settings: Use the account map
     if account is None:
@@ -117,14 +121,14 @@ def oauth_ssh():
         if acct_map is None:
             acct_map = SSHService(fqdn, port).get_account_map(access_token)
             Config.save_object(fqdn, acct_map)
-        if acct_map['permitted_accounts'] is not None:
-            if getpass.getuser() in acct_map['permitted_accounts']:
+        if acct_map["permitted_accounts"] is not None:
+            if getpass.getuser() in acct_map["permitted_accounts"]:
                 account = getpass.getuser()
-            elif len(acct_map['permitted_accounts']) == 1:
-                account = acct_map['permitted_accounts'][0]
+            elif len(acct_map["permitted_accounts"]) == 1:
+                account = acct_map["permitted_accounts"][0]
 
     if account is None:
-        print('Could not determine remote account to use. Please use -l <account>.')
+        print("Could not determine remote account to use. Please use -l <account>.")
         sys.exit(1)
 
     try:
@@ -136,7 +140,7 @@ def oauth_ssh():
     channel.setblocking(0)
 
     if command is not None and len(command) > 0:
-        channel.exec_command(' '.join(command))
+        channel.exec_command(" ".join(command))
     else:
         channel.get_pty()
         channel.invoke_shell()
@@ -149,8 +153,8 @@ def oauth_ssh():
             oldtty = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
             if command is None or len(command) == 0:
-            	# Forward escapes like control-C
-            	tty.setraw(sys.stdin.fileno())
+                # Forward escapes like control-C
+                tty.setraw(sys.stdin.fileno())
         channel.settimeout(None)
 
         watch_list = [channel, sys.stdin]

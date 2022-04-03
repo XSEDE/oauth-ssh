@@ -13,7 +13,7 @@ class Template(dict):
 
     def __setitem__(self, key, value):
         if key not in self._template:
-            raise KeyError(self.__class__.__name__ +": No such key: "+str(key))
+            raise KeyError(self.__class__.__name__ + ": No such key: " + str(key))
 
         expected_type = self._template[key]
         bad_value = False
@@ -40,7 +40,7 @@ class Template(dict):
                     else:
                         cast_value = expected_type(value)
                 except:
-                    bad_value = True # Bad cast
+                    bad_value = True  # Bad cast
 
         # Last minute list validation
         if bad_value is False and value is not None and expected_type is list:
@@ -52,16 +52,14 @@ class Template(dict):
                 cast_value = list(map(lambda x: str(x), cast_value))
 
         if bad_value is True:
-            raise TypeError(self.__class__.__name__
-                            + ": Bad value for "
-                            + key
-                            + ": "
-                            + str(value))
+            raise TypeError(
+                self.__class__.__name__ + ": Bad value for " + key + ": " + str(value)
+            )
 
         super(Template, self).__setitem__(key, cast_value)
 
     def update(self, values):
-        for k,v in values.items():
+        for k, v in values.items():
             if k in self._template:
                 # Let setitem check types
                 self[k] = values[k]

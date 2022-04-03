@@ -14,47 +14,57 @@ class UnexpectedSSHReply(OAuthSSHError):
         msg = "Unexpected reply from the SSH service: " + str(reply)
         super(UnexpectedSSHReply, self).__init__(msg)
 
+
 class HostLookupFailed(OAuthSSHError):
     def __init__(self, fqdn):
-        msg = "ssh: Could not resolve hostname " \
-               + fqdn \
-               + ": Name or service not known"
+        msg = "ssh: Could not resolve hostname " + fqdn + ": Name or service not known"
         super(HostLookupFailed, self).__init__(msg)
+
 
 class ConnectionTimeout(OAuthSSHError):
     def __init__(self, host_port):
         msg = "Timedout connecting to " + host_port
         super(ConnectionTimeout, self).__init__(msg)
 
+
 class SessionViolation(OAuthSSHError):
     def __init__(self, fqdn):
-        msg = "The access token no longer meets this site's security policy requirements. " \
-            + "Use `oauth-ssh-token authorize " + fqdn + "`."
+        msg = (
+            "The access token no longer meets this site's security policy requirements. "
+            + "Use `oauth-ssh-token authorize "
+            + fqdn
+            + "`."
+        )
         super(SessionViolation, self).__init__(msg)
+
 
 class AuthorizationFailure(OAuthSSHError):
     def __init__(self):
         msg = "Authorization to this host has failed. Likely causes are no local account or a misconfigured service."
         super(AuthorizationFailure, self).__init__(msg)
 
+
 class InvalidToken(OAuthSSHError):
     def __init__(self):
         msg = "The access token is invalid. Use `oauth-ssh-token authorize`."
         super(InvalidToken, self).__init__(msg)
 
+
 class UnknownHostKey(OAuthSSHError):
     def __init__(self):
         super(UnknownHostKey, self).__init__("Host key verification failed.")
+
 
 ####################################################################
 #
 # Paramiko Transport Creation
 #
 ####################################################################
-FAMILY=0
-SOCKTYPE=1
-PROTO=2
-SOCKADDR=4
+FAMILY = 0
+SOCKTYPE = 1
+PROTO = 2
+SOCKADDR = 4
+
 
 def _lookup_host(fqdn, port):
     try:
@@ -66,6 +76,7 @@ def _lookup_host(fqdn, port):
         raise
     return infos[0]
 
+
 def _connect_to_host(fqdn, port):
     info = _lookup_host(fqdn, port)
     try:
@@ -73,19 +84,20 @@ def _connect_to_host(fqdn, port):
         s.settimeout(15)
         s.connect(info[SOCKADDR])
     except socket.timeout as e:
-        raise ConnectionTimeout(fqdn + ':' + str(port))
+        raise ConnectionTimeout(fqdn + ":" + str(port))
     except:
         raise
     finally:
         s.settimeout(None)
     return s
 
+
 ####################################################################
 #
 # SSH Command/Reply Exchange
 #
 ####################################################################
-class CmdInjectHandler():
+class CmdInjectHandler:
     def __init__(self, command):
         self._state = 0
         self._reply = None
@@ -117,7 +129,7 @@ class CmdInjectHandler():
                 # title: ""
                 # instructions: ""
                 # prompt_list: [('<base64-encoded-reply>\nPassword: ', False)]
-                self._reply = prompt_list[0][0].split('\n')[0]
+                self._reply = prompt_list[0][0].split("\n")[0]
                 self._state = 0
             else:
                 # Successful login, instructions and reply are None (or "")
@@ -125,11 +137,13 @@ class CmdInjectHandler():
                 self._state = 0
         return []
 
+
 def decode_reply(reply):
     try:
-        return json.loads(base64.b64decode(reply.rstrip('\n')).decode("utf-8"))
+        return json.loads(base64.b64decode(reply.rstrip("\n")).decode("utf-8"))
     except Exception as e:
         raise UnexpectedSSHReply(reply)
+
 
 class Transport(paramiko.transport.Transport):
     def __init__(self, fqdn, port):
@@ -138,7 +152,7 @@ class Transport(paramiko.transport.Transport):
         super(Transport, self).__init__(_connect_to_host(fqdn, port))
         self.start_client(timeout=15)
         remote_host_key = self.get_remote_server_key()
-        known_hosts_file = os.path.expanduser('~/.ssh/known_hosts')
+        known_hosts_file = os.path.expanduser("~/.ssh/known_hosts")
 
         # Treat missing/bad hosts files as unknown host
         try:
@@ -147,9 +161,7 @@ class Transport(paramiko.transport.Transport):
             known_host_keys = paramiko.hostkeys.HostKeys()
 
         if known_host_keys.check(fqdn, remote_host_key) is False:
-            print("The authenticity of host '" \
-                + fqdn \
-                + "' can't be established.")
+            print("The authenticity of host '" + fqdn + "' can't be established.")
 
             key_name = remote_host_key.get_name()
             if key_name == "ssh-ed25519":
@@ -169,14 +181,14 @@ class Transport(paramiko.transport.Transport):
 
             answer = None
             while answer not in ("yes", "y", "no", "n"):
-                answer = input("Are you sure you want to continue connecting (yes/no)? ")
+                answer = input(
+                    "Are you sure you want to continue connecting (yes/no)? "
+                )
 
-            if answer in ('no', 'n'):
+            if answer in ("no", "n"):
                 raise UnknownHostKey()
 
-            known_host_keys.add(fqdn,
-                                remote_host_key.get_name(),
-                                remote_host_key)
+            known_host_keys.add(fqdn, remote_host_key.get_name(), remote_host_key)
             # Ignore host key file issues
             try:
                 known_host_keys.save(known_hosts_file)
@@ -199,10 +211,10 @@ class Transport(paramiko.transport.Transport):
             # respond to successful login because it will come out with the MOTD which
             # would not work well for clients that pass the token themselves.
             reply = decode_reply(handler._reply)
-            if 'error' in reply and 'code' in reply['error']:
-                if reply['error']['code'] == 'SESSION_VIOLATION':
+            if "error" in reply and "code" in reply["error"]:
+                if reply["error"]["code"] == "SESSION_VIOLATION":
                     raise SessionViolation(self._fqdn)
-                if reply['error']['code'] == 'INVALID_TOKEN':
+                if reply["error"]["code"] == "INVALID_TOKEN":
                     raise InvalidToken()
                 raise UnexpectedSSHReply(reply)
             return reply
