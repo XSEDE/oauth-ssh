@@ -95,6 +95,12 @@ develop: _setup
 test: develop
 	make check
 
+#
+# Prevent users from building packages from source that was modified after a
+# tagged release. If we detect this is not a tagged release, added the '.dev'
+# suffix to the package's version name.
+#
+
 define DIRTY_RELEASE
 ###############################################################################
 # WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNIG WARNING
@@ -112,12 +118,17 @@ RELEASE_TAG=$(shell \
         sed 's/\(SERVER_[0-9]\+\.[0-9]\+\).*/\1/'\
 )
 
+# This target will check if the repo is clean (on a CLIENT_ tag with no extra
+# cruft). If it is, then create the file 'clean' which signals setup.py to
+# _not_ add the .dev0 suffix.
 _check_release:
 	@git diff --quiet $(RELEASE_TAG) -- . > /dev/null; \
 	if [ $$? != 0 ]; \
 	then \
 		echo "$$DIRTY_RELEASE"; \
-		sed -i 's/^##develop //' configure.ac; \
+		rm -f clean; \
+	else \
+		touch clean; \
 	fi
 
 release: _CFLAGS=-O3 $(CFLAGS)

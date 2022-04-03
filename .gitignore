@@ -16,6 +16,7 @@ server/src/config/setup.cfg
 .libs
 server/src/config/oauth_ssh_config.egg-info/
 .vscode
+server/clean
 
 
 # http://www.gnu.org/software/automake

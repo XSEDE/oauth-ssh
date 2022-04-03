@@ -34,9 +34,14 @@ AM_PROG_AR
 
 LT_INIT
 
-AC_SUBST(PACKAGE_RELEASE_TAG, '')
-# This next line is modified by Makefile.bootstrap to mark development releases
-##develop AC_SUBST(PACKAGE_RELEASE_TAG, .dev)
+# We mark packages as .dev by default which indicates that the build is dirty;
+# it either didn't go through the proper build procedure (Makefile.bootstrap)
+# or the repo is not clean and on a release tag.
+AS_IF(
+    [test -f clean],
+    [AC_SUBST(PACKAGE_RELEASE_TAG, '')],
+    [AC_SUBST(PACKAGE_RELEASE_TAG, .dev)]
+)
 
 AC_CONFIG_FILES(Makefile
                 src/pam/Makefile
