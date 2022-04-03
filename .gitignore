@@ -14,6 +14,8 @@ server/packaging/fedora/oauth-ssh.spec
 server/src/config/setup.cfg
 .deps
 .libs
+server/src/config/oauth_ssh_config.egg-info/
+.vscode
 
 
 # http://www.gnu.org/software/automake
