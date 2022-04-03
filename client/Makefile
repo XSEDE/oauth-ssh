@@ -29,6 +29,8 @@ endif
 
 OAUTH_SSH=$(VENV_ROOT)/bin/oauth-ssh
 PYTEST=$(VENV_ROOT)/bin/pytest
+BLACK=$(VENV_ROOT)/bin/black
+FLAKE8=$(VENV_ROOT)/bin/flake8
 VENV_NAME=$(shell basename $(VENV_ROOT))
 
 ifdef USING_PENV
@@ -36,8 +38,20 @@ $(PY_VER_ROOT):
 	pyenv install --skip-existing $(PYTHON_VERSION)
 endif
 
-develop: $(OAUTH_SSH)
+develop: $(OAUTH_SSH) $(PYTEST) lint_tools
 	@echo "Use \". $(VENV_ROOT)/bin/activate\""
+
+lint_tools:
+	# These need to be moved when the build system is improved.
+	@[[ -f $(VENV_ROOT)/bin/black ]] || $(PIP) install black
+	@[[ -f $(VENV_ROOT)/bin/flake8 ]] || $(PIP) install flake8
+	@[[ -f $(VENV_ROOT)/bin/mypy ]] || $(PIP) install mypy
+	$(PIP) install types-paramiko types-requests types-click
+
+lint: $(OAUTH_SSH) lint_tools
+	@-$(VENV_ROOT)/bin/black oauth_ssh/
+	@-$(VENV_ROOT)/bin/flake8 oauth_ssh/
+	@-$(VENV_ROOT)/bin/mypy oauth_ssh/
 
 test: $(OAUTH_SSH) $(PYTEST)
 	$(PYTEST)
