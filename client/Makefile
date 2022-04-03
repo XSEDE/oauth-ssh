@@ -53,9 +53,11 @@ $(OAUTH_SSH): $(VENV_ROOT)
 $(PYTEST): $(VENV_ROOT)
 	$(PIP) install pytest
 
+
 #
-# _check_release warns if we are building a release but either we
-# are not on a tag or the tree is dirty.
+# Prevent users from building packages from source that was modified after a
+# tagged release. If we detect this is not a tagged release, added the '.dev0'
+# suffix to the package's version name.
 #
 
 define DIRTY_RELEASE
@@ -75,12 +77,17 @@ RELEASE_TAG=$(shell \
 	sed 's/\(CLIENT_[0-9]\+\.[0-9]\+\).*/\1/'\
 )
 
+# This target will check if the repo is clean (on a CLIENT_ tag with no extra
+# cruft). If it is, then create the file 'clean' which signals setup.py to
+# _not_ add the .dev0 suffix.
 _check_release:
 	@git diff --quiet $(RELEASE_TAG) -- . > /dev/null; \
 	if [ $$? != 0 ]; \
 	then \
 		echo "$$DIRTY_RELEASE"; \
-		sed -i '0,/^\(version\s*=\s*[0-9]\+\.[0-9]\+\).*/s//\1.dev/' setup.cfg; \
+		rm -f clean; \
+	else \
+		touch clean; \
 	fi
 
 release: _check_release $(VENV_ROOT)
